@@ -9,7 +9,7 @@ function [ beta ] = leastSquaresGD( y,tX,alpha )
     maxIters = 1000;
 
     % Initialization
-    beta = [0; 0];
+    beta = zeros(length(tX(1,:)), 1);
 
     % Main loop
     for k = 1:maxIters
@@ -18,8 +18,8 @@ function [ beta ] = leastSquaresGD( y,tX,alpha )
         beta = beta - alpha .* g; % Update beta
 
         % For debugging
-        L = costMSE(y, tX, beta);
-        fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
+        % L = costMSE(y, tX, beta);
+        % fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
     end
 
 end
