@@ -46,6 +46,6 @@ function [ g ] = computeGradientPLR( y, tX, beta, lambda )
 %computeGradientLR compute the gradient of a logistic regresstion step
 %   lambda is the regularisation term
 
-    g = -(tX'*(fsigma(tX*beta) - y) + lambda*beta);
+    g = -(tX'*(sigmoid(tX*beta) - y) + lambda*beta);
 
 end

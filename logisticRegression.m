@@ -41,6 +41,6 @@ end
 function [ g ] = computeGradientLR( y, tX, beta )
 %computeGradientLR compute the gradient of a logistic regresstion step
 
-    g = -(tX'*(fsigma(tX*beta) - y));
+    g = -(tX'*(sigmoid(tX*beta) - y));
 
 end

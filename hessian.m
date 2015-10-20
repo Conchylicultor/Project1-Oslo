@@ -5,7 +5,7 @@ function [H] = hessian(tX, beta)
     S = zeros(N);
     for i=1:N
         tXn = tX(i,:)';
-        S(i,i) = fsigma(tXn'*beta)*(1-fsigma(tXn'*beta));
+        S(i,i) = sigmoid(tXn'*beta)*(1-sigmoid(tXn'*beta));
     end
     H = tX'*S*tX;
 end
