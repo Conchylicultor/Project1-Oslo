@@ -5,7 +5,9 @@ close all;
 
 % Loading data
 disp('Project1 - Oslo Team');
-load('Oslo_regression.mat')
+load('Oslo_regression.mat');
+
+%plot(X_train, y_train, '.');
 
 % Normalizing the data
 % TODO: Do we have to normalized binary data (0.85, -1.17) ???
@@ -17,17 +19,10 @@ for i = 1:length(X_train(1,:))
   stdX(i) = std(X_train(:,i));
   
   X_train(:,i) = (X_train(:,i)-meanX(i))/stdX(i);
-  % We normalize our testing data with the same value that for our training
-  % (using the same mean and std that for the testing)
+  % We normalize our testing data with the same value that for our testing
+  % data (using the same mean and std that for the training)
   X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
 end
-
-% TODO: We normalize our training data
-
-%for i = 1:length(X(1,:))
-%  meanX = mean(X(:,i));
-%  X(:,i) = (X(:,i)-meanX)/std(X(:,i));
-%end
 
 % Randomly sorting the data
 
