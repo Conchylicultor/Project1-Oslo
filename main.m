@@ -3,14 +3,27 @@ clc;
 clear all;
 close all;
 
+% Parametters
+k_fold = 5; % Cross validation
+
 % Loading data
 disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
-%plot(X_train, y_train, '.');
+%plot(X_train, y_train);
+%boxplot(X_train); % Before normalization
+
+% Randomly permute the data
+idx = randperm(length(y_train)); % Training
+X_train = X_train(idx,:);
+y_train = y_train(idx);
+
+idx = randperm(length(X_test(:,1))); % Testing
+X_test = X_test(idx,:);
 
 % Normalizing the data
 % TODO: Do we have to normalized binary data (0.85, -1.17) ???
+% TODO: Remove categorical data
 
 meanX = zeros(1, length(X_train(1,:)));
 stdX = zeros(1, length(X_train(1,:)));
@@ -24,7 +37,37 @@ for i = 1:length(X_train(1,:))
   X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
 end
 
-% Randomly sorting the data
+% boxplot(X_train); % After normalization
+
+% Cross validation (make the random permutaion useless)
+Indices = crossvalind('Kfold', length(y_train), k_fold);
+
+% form tX
+tX_train = [ones(length(y_train), 1) X_train];
+tX_test = [ones(length(X_test(:,1)), 1) X_test]; % TODO: Or poly(X_test, degree) ???
+
+costResult = zeros(k_fold,1);
+for k = 1:k_fold % Cross validation
+    % Generate train and test data
+    kPermIdx = (Indices~=k); % Dividing in two groups
+    
+    tX_TrainSet = tX_train(kPermIdx,:);
+    Y_TrainSet = y_train(kPermIdx,:);
+    tX_TestSet  = tX_train(~kPermIdx,:);
+    Y_TestSet  = y_train(~kPermIdx,:);
+    
+    
+    
+    % Machine learning: compute parametters
+    beta = leastSquares(Y_TrainSet, tX_TrainSet);
+    
+    % Machine learning: make predictions
+    costResult(k) = costMSE(Y_TestSet, tX_TestSet, beta);
+    
+    % Save predictions
+end
+
+boxplot(costResult);
 
 % for randomly sort the data x times
 %   for divide the data in k part
