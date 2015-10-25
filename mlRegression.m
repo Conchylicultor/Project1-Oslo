@@ -57,13 +57,13 @@ for k = 1:k_fold % Cross validation
     Y_TestSet  = y_train(~kPermIdx,:);
     
     % Machine learning: compute parametters and make predictions
-    %betaLeastSquare = leastSquares(Y_TrainSet, tX_TrainSet);
-    %costTraining(k,1) = costRMSE(Y_TrainSet, tX_TrainSet, betaLeastSquare);
-    %costTesting(k,1) = costRMSE(Y_TestSet, tX_TestSet, betaLeastSquare);
+    betaLeastSquare = leastSquares(Y_TrainSet, tX_TrainSet);
+    costTraining(k,1) = costRMSE(Y_TrainSet, tX_TrainSet, betaLeastSquare);
+    costTesting(k,1) = costRMSE(Y_TestSet, tX_TestSet, betaLeastSquare);
     
-    %betaGradient = leastSquaresGD(Y_TrainSet, tX_TrainSet, 0.01);
-    %costTraining(k,2) = costRMSE(Y_TrainSet, tX_TrainSet, betaGradient);
-    %costTesting(k,2) = costRMSE(Y_TestSet, tX_TestSet, betaGradient);
+    betaGradient = leastSquaresGD(Y_TrainSet, tX_TrainSet, 0.01);
+    costTraining(k,2) = costRMSE(Y_TrainSet, tX_TrainSet, betaGradient);
+    costTesting(k,2) = costRMSE(Y_TestSet, tX_TestSet, betaGradient);
     
     for i = 1:length(valsLambda)
         lambda = valsLambda(i);
@@ -80,10 +80,11 @@ end
 meanCostRidge = mean(costRidgeTesting);
 [~, minCostRidgeIdx] = min(meanCostRidge);
 
+%valsLambda(minCostRidgeIdx) % Debug: Best value of lambda
+
 costTraining(:,3) = costRidgeTraining(:,minCostRidgeIdx);
 costTesting(:,3) = costRidgeTesting(:,minCostRidgeIdx);
 
-valsLambda(minCostRidgeIdx) % Debug: Best value of lambda
 betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)); % Recompute beta again with the best value of lambda
 
 
@@ -91,8 +92,8 @@ betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)
 
 figure(1);
 %hist(tX_TestSet*betaLeastSquare, 50);
-%hist(tX_TestSet*betaGradient, 50);
-hist(tX_TestSet*betaRidge, 50);
+hist(tX_TestSet*betaGradient, 50);
+%hist(tX_TestSet*betaRidge, 50);
 figure(2);
 boxplot([costTraining costTesting]);
 

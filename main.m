@@ -9,18 +9,37 @@ close all;
 disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
+%plot(X_train(:,38), y_train, '.r');
+%plot(X_train(:,16), y_train, '.r');
+%plot(X_train(:,61), y_train, '.b');
+%plot(X_train(:,12), y_train, '.b');
+%plot(X_train(:,26), y_train, '.b');
+%plot(X_train(:,19), y_train, '.y');
+%plot(X_train(:,11), y_train, '.y');
+%plot(X_train(:,37), y_train, '.y');
+
+X_train = [X_train(:,38) ...
+           X_train(:,16) ...
+           X_train(:,61) ...
+           X_train(:,12) ...
+           X_train(:,26) ...
+           X_train(:,19) ...
+           X_train(:,11) ...
+           X_train(:,37)];
+
+
 %% Visualize Data
 % % Visualize Y=f(X), allow us to see some correlation
 % NbColor = 5;
 % colorMap = hsv(NbColor);
-% hold all;
 % for i= 1:length(X_train(1,:))
 %     figure(floor((i-1)/NbColor) + 1);
+%     hold on;
 %     plot(X_train(:,i), y_train, '.', 'Color',colorMap(mod(i-1, NbColor) + 1,:));
 % end
 % 
 % % We see here three clusters of points
-% hist(y_train, 200);
+% %hist(y_train, 200);
 
 %% Bias vs Variance diagnostic: Testing and training error = f(size of dataset)
 
