@@ -1,8 +1,8 @@
-function [ beta, costResult ] = mlRegression(testingSet, trainingSet)
+function [costTraining, costTesting] = mlRegression(X_train, y_train, X_test, k_param)
 %leastSquares Least squares using normal equations.
 
 % Parametters
-k_fold = 5; % Cross validation
+k_fold = k_param; % Cross validation
 
 %plot(X_train, y_train);
 %boxplot(X_train); % Before normalization
@@ -38,9 +38,15 @@ Indices = crossvalind('Kfold', length(y_train), k_fold);
 
 % form tX
 tX_train = [ones(length(y_train), 1) X_train];
-tX_test = [ones(length(X_test(:,1)), 1) X_test]; % TODO: Or poly(X_test, degree) ???
+tX_test = [ones(length(X_test(:,1)), 1) X_test];
 
-costResult = zeros(k_fold,1);
+costTraining = zeros(k_fold,3);
+costTesting = zeros(k_fold,3);
+
+valsLambda = logspace(-1,3,30);
+costRidgeTraining = zeros(k_fold, length(valsLambda));
+costRidgeTesting = zeros(k_fold, length(valsLambda));
+    
 for k = 1:k_fold % Cross validation
     % Generate train and test data
     kPermIdx = (Indices~=k); % Dividing in two groups
@@ -50,34 +56,50 @@ for k = 1:k_fold % Cross validation
     tX_TestSet  = tX_train(~kPermIdx,:);
     Y_TestSet  = y_train(~kPermIdx,:);
     
+    % Machine learning: compute parametters and make predictions
+    %betaLeastSquare = leastSquares(Y_TrainSet, tX_TrainSet);
+    %costTraining(k,1) = costRMSE(Y_TrainSet, tX_TrainSet, betaLeastSquare);
+    %costTesting(k,1) = costRMSE(Y_TestSet, tX_TestSet, betaLeastSquare);
     
+    %betaGradient = leastSquaresGD(Y_TrainSet, tX_TrainSet, 0.01);
+    %costTraining(k,2) = costRMSE(Y_TrainSet, tX_TrainSet, betaGradient);
+    %costTesting(k,2) = costRMSE(Y_TestSet, tX_TestSet, betaGradient);
     
-    % Machine learning: compute parametters
-    beta = leastSquares(Y_TrainSet, tX_TrainSet);
-    
-    % Machine learning: make predictions
-    costResult(k) = costRMSE(Y_TestSet, tX_TestSet, beta);
+    for i = 1:length(valsLambda)
+        lambda = valsLambda(i);
+        betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, lambda);
+    	costRidgeTraining(k,i) = costRMSE(Y_TrainSet, tX_TrainSet, betaRidge);
+    	costRidgeTesting(k,i) = costRMSE(Y_TestSet, tX_TestSet, betaRidge);
+    end
     
     % Save predictions
 end
 
-%boxplot(costResult);
+%% Compute the cost for the ridge regression (and extract the right value of beta)
+
+meanCostRidge = mean(costRidgeTesting);
+[~, minCostRidgeIdx] = min(meanCostRidge);
+
+costTraining(:,3) = costRidgeTraining(:,minCostRidgeIdx);
+costTesting(:,3) = costRidgeTesting(:,minCostRidgeIdx);
+
+valsLambda(minCostRidgeIdx) % Debug: Best value of lambda
+betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)); % Recompute beta again with the best value of lambda
+
+
+%% Plot some results (compare different methods)
+
+figure(1);
+%hist(tX_TestSet*betaLeastSquare, 50);
+%hist(tX_TestSet*betaGradient, 50);
+hist(tX_TestSet*betaRidge, 50);
+figure(2);
+boxplot([costTraining costTesting]);
 
 % for randomly sort the data x times
 %   for divide the data in k part
 %       for dimention of the regretion (first degree, second degree ?)
 %           for cross validation (compute value of lambda)
 % TODO: Estimate complexity
-
-% Divide the data in K-parts
-
-% Compute a lot of RMSE
-
-% Plot the histogram of all RMSE
-
-% Revert the normalization to obtain the correct results
-
-% Ending program
-disp('Thanks for using our script');
 
 end

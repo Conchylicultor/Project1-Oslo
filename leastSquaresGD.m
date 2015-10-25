@@ -3,7 +3,6 @@ function [ beta ] = leastSquaresGD( y,tX,alpha )
 %   Remark: alpha is the step-size
 
     % TODO: Implement stochastic gradient descent
-    % QUESTION: Is least square the same as mean square error ???
 
     % Parameters
     maxIters = 1000;
@@ -18,9 +17,17 @@ function [ beta ] = leastSquaresGD( y,tX,alpha )
         beta = beta - alpha .* g; % Update beta
 
         % For debugging
-        % L = costMSE(y, tX, beta);
-        % fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
+        L(k) = costMSE(y, tX, beta);
+        %fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
+        
+        if (g'*g < 1e-5) % Convergence (or local minimum)
+            fprintf('Convergence');
+            break; 
+        end;
     end
+    
+    %figure(200)
+    %plot(L);
 
 end
 
