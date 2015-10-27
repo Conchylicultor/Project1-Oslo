@@ -1,4 +1,5 @@
 %% Main: Linear regression
+% From Etienne Pot and Lucile Madoulaud
 
 % Clear workspace
 clc;
@@ -9,19 +10,160 @@ close all;
 disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
-% % Without categorical data
-% collumnIdToTake = [4 5 6 7 8 9 11 12 13 15 17 18 19 21 22 23 24 25 26 27 29 31 32 33 34 35 36 37 39 40 43 44 45 46 47 48 49 50 51 52 54 55 56 57 58 60 61 62 64 65];
-% collumnIdToRemove = [1 2 3 10 14 16 20 28 30 38 41 42 53 59 63];
-% collumnIdToTake = [16 38 collumnIdToTake];
-% 
-% X_trainClean = X_train(:,collumnIdToTake(1));
-% for i = collumnIdToTake(2:end)
-%     X_trainClean = [X_trainClean X_train(:,i)];
+%% Some data visualization
+% to spot the categorical data for instance
+
+% boxplot(X_train); % Before normalization
+
+%% Dividing into two groups
+% one to train the models, the other one to test and evaluate the model
+% selection and global results
+
+% Separate 90%-10%
+evaluationIdx = (crossvalind('Kfold', length(y_train), 10) == 1); % Select the final testing set
+
+X_Evaluation = X_train(evaluationIdx,:);
+Y_Evaluation = y_train(evaluationIdx,:); % Testing data to evaluate the accuracy of the model selection
+
+X_GlobalSet  = X_train(~evaluationIdx,:);
+Y_GlobalSet  = y_train(~evaluationIdx,:); % Training data for the three models
+
+%% Dividing our training data for our three models
+
+% Thanks to hist(y_train), we can see the limits of the three clusters
+% that we will take.
+
+% hist(y_train, 200);
+% title('Output histogram');
+% xlabel('Y value');
+% ylabel('Nb of occurence');
+
+% The limits are:
+% * 0-4100 for cluster 1
+% * 4101-9000 for cluster 2
+% * 9000-+++ for cluster 3
+
+model1Idx = Y_GlobalSet <= 4100;
+model2Idx = bitand(Y_GlobalSet > 4100,Y_GlobalSet <= 9000);
+model3Idx = Y_GlobalSet > 9000;
+
+% Assure correctness
+assert(length(Y_GlobalSet) == sum(model1Idx+model2Idx+model3Idx), 'Values in no model');
+
+sum(model1Idx)
+sum(model2Idx)
+sum(model3Idx)
+
+% Creation of our three training set
+X_Model1 = X_GlobalSet(model1Idx,:);
+y_Model1 = Y_GlobalSet(model1Idx);
+
+X_Model2 = X_GlobalSet(model2Idx,:);
+y_Model2 = Y_GlobalSet(model2Idx);
+
+X_Model3 = X_GlobalSet(model3Idx,:);
+y_Model3 = Y_GlobalSet(model3Idx);
+
+% Lets visualise our data clouds
+
+% First possibility: Y=f(X)
+% figure(1);
+% plot(X_Train, y_Train, '.r'); % Our data points "brut"
+
+% All data points
+% hold on;
+% for i= 1:length(X_train(1,:))
+%     figure(i);
+%     hold on;
+%     
+%     plot(X_Model1(:,i), y_Model1, '.r');
+%     plot(X_Model2(:,i), y_Model2, '.g');
+%     plot(X_Model3(:,i), y_Model3, '.b');
 % end
-% 
-% X_train = X_trainClean;
 
+% TODO: Plot ambiguity zones in another color to see eventual correlations
+% to select disriminate criteria
 
+%% Train the models
+% We use k-cross validation to extract the bests parametters for the three
+% models
+
+% TODO: does it works better if we do the same nomalisation for everyone ??
+
+k=12; % Parametter for the cross validation
+[beta1, mean1, std1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
+[beta2, mean2, std2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
+[beta3, mean3, std3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
+
+%% Select model for the testing data
+% When ambiguitty, we compute weight the results of the two closest model
+
+% TODO: When ambiguitty, we compute weight the results of the two closest model
+
+% We decide the cluster from some variables
+% figure(1);
+% plot(X_train(:,16), y_train, '.');
+% figure(2);
+% plot(X_train(:,38), y_train, '.');
+
+% We determine in which cluster we are
+selectionCondition1 = X_Evaluation(:,16) > 15.0;
+selectionCondition2 = X_Evaluation(:,38) < 15.5;
+
+selectionModel1 = selectionCondition2;
+selectionModel2 = bitand(~selectionCondition1, ~selectionCondition2);
+selectionModel3 = selectionCondition1;
+
+X_Model1 = X_Evaluation(selectionModel1,:);
+y_Model1 = Y_Evaluation(selectionModel1);
+
+X_Model2 = X_Evaluation(selectionModel2,:);
+y_Model2 = Y_Evaluation(selectionModel2);
+
+X_Model3 = X_Evaluation(selectionModel3,:);
+y_Model3 = Y_Evaluation(selectionModel3);
+
+% Model visualisation
+figure(1);
+hold on;
+plot(X_Model1(:,16), y_Model1, '.r');
+plot(X_Model2(:,16), y_Model2, '.g');
+plot(X_Model3(:,16), y_Model3, '.b');
+figure(2);
+hold on;
+plot(X_Model1(:,38), y_Model1, '.r');
+plot(X_Model2(:,38), y_Model2, '.g');
+plot(X_Model3(:,38), y_Model3, '.b');
+
+% Normalize data according to the corresponding model (TODO: TO REMOVE IF WE NORMALIZE THE DATA AT ONCE)
+
+for i = 1:length(X_train(1,:))
+    X_Model1(:,i) = (X_Model1(:,i)-mean1(i))/std1(i);
+    X_Model2(:,i) = (X_Model2(:,i)-mean2(i))/std2(i);
+    X_Model3(:,i) = (X_Model3(:,i)-mean3(i))/std3(i);
+end
+
+% form tX
+tX_Model1 = [ones(length(y_Model1), 1) X_Model1];
+tX_Model2 = [ones(length(y_Model2), 1) X_Model2];
+tX_Model3 = [ones(length(y_Model3), 1) X_Model3];
+
+costRMSE(y_Model1, tX_Model1, beta1)
+costRMSE(y_Model2, tX_Model2, beta2)
+costRMSE(y_Model3, tX_Model3, beta3)
+
+% TODO: Evaluate how well our model selection perform
+
+return;
+
+%% GARBAGE CODE: TO DELETE
+
+% X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
+% y_trainModel1 = y_train(X_train(:,16) > 15.0);
+
+% Collumn 63(cat 4), 28(cat 4)!!! and 10(cat 3) could help discriminate
+
+% Warning: apply the same normalization that for the training data
 
 % % Trying extract only on of th gaussian
 % X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
