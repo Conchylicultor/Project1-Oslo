@@ -31,7 +31,8 @@ for i = 1:length(X_train(1,:))
   X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
 end
 
-% boxplot(X_train); % After normalization
+%figure(10);
+%boxplot(X_train); % After normalization
 
 % Cross validation (make the random permutaion useless)
 Indices = crossvalind('Kfold', length(y_train), k_fold);
@@ -92,10 +93,17 @@ betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)
 
 figure(1);
 %hist(tX_TestSet*betaLeastSquare, 50);
-hist(tX_TestSet*betaGradient, 50);
-%hist(tX_TestSet*betaRidge, 50);
+%hist(tX_TestSet*betaGradient, 50);
+hist(tX_TestSet*betaRidge, 50);
 figure(2);
 boxplot([costTraining costTesting]);
+
+% figure(3);
+% plot(tX_TestSet, tX_TestSet*betaRidge, '.g');
+% figure(4);
+% plot(tX_TestSet, tX_TestSet*betaRidge - Y_TestSet, '.g');
+% figure(5);
+% plot(tX_TestSet, Y_TestSet, '.r');
 
 % for randomly sort the data x times
 %   for divide the data in k part

@@ -17,7 +17,7 @@ function [ beta ] = leastSquaresGD( y,tX,alpha )
         beta = beta - alpha .* g; % Update beta
 
         % For debugging
-        L(k) = costMSE(y, tX, beta);
+        %L(k) = costMSE(y, tX, beta);
         %fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
         
         if (g'*g < 1e-5) % Convergence (or local minimum)

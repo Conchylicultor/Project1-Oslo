@@ -9,6 +9,40 @@ close all;
 disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
+% % Without categorical data
+% collumnIdToTake = [4 5 6 7 8 9 11 12 13 15 17 18 19 21 22 23 24 25 26 27 29 31 32 33 34 35 36 37 39 40 43 44 45 46 47 48 49 50 51 52 54 55 56 57 58 60 61 62 64 65];
+% collumnIdToRemove = [1 2 3 10 14 16 20 28 30 38 41 42 53 59 63];
+% collumnIdToTake = [16 38 collumnIdToTake];
+% 
+% X_trainClean = X_train(:,collumnIdToTake(1));
+% for i = collumnIdToTake(2:end)
+%     X_trainClean = [X_trainClean X_train(:,i)];
+% end
+% 
+% X_train = X_trainClean;
+
+
+
+% % Trying extract only on of th gaussian
+% X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
+% y_trainModel1 = y_train(X_train(:,16) > 15.0);
+% X_train = X_trainModel1(:,26);
+% y_train = y_trainModel1;
+% X_trainModel1 = X_train(y_trainModel1 > 8000);
+% y_trainModel1 = y_train(y_trainModel1 > 8000);
+% X_train = X_trainModel1;
+% y_train = y_trainModel1;
+% 
+% figure(512);
+% plot(X_train, y_train, '.');
+
+%X_trainModel2 = X_train(X_train(:,16) < 15.0, :);
+%plot(X_trainModel1(:,16), y_train(X_train(:,16) > 15.0), '.r');
+%plot(X_trainModel2(:,16), y_train(X_train(:,16) < 15.0), '.b');
+
+
+
+% Highly correlated input
 %plot(X_train(:,38), y_train, '.r');
 %plot(X_train(:,16), y_train, '.r');
 %plot(X_train(:,61), y_train, '.b');
