@@ -1,5 +1,5 @@
 function [beta, meanX, stdX] = trainRegressionModel(X_train, y_train, k_fold, idModel)
-%trainRegressionModel Least squares using normal equations.
+%trainRegressionModel Find the best parametters beta using cross validation
 
 disp(['Compute regression for model ',num2str(idModel)]);
 
@@ -29,7 +29,7 @@ end
 %figure(10);
 %boxplot(X_train); % After normalization
 
-% Cross validation (make the random permutaion useless)
+% Cross validation (DON'T make the random permutaion useless)
 Indices = crossvalind('Kfold', length(y_train), k_fold);
 
 % form tX
@@ -94,6 +94,7 @@ boxplot([costTraining costTesting]);
 
 beta = betaRidge;
 
+disp(['Cost model ', num2str(idModel), ': ', num2str(mean(costTesting(:, 3)))]);
 % figure(3);
 % plot(tX_TestSet, tX_TestSet*betaRidge, '.g');
 % figure(4);

@@ -15,6 +15,30 @@ load('Oslo_regression.mat');
 
 % boxplot(X_train); % Before normalization
 
+% % Collumns useful to select the model
+% figure(1);
+% plot(X_train(:,16), y_train, '.');
+% figure(2);
+% plot(X_train(:,38), y_train, '.');
+% % Histogram of those collumn
+% figure(3);
+% hist(X_train(:,16), 100);
+% figure(4);
+% hist(X_train(:,38), 100);
+% figure(5);
+% plot(X_train(:,16), X_train(:,38), '.');
+
+%% Data transformation
+% Normalisation, dummy encoding
+
+% Random permutation here ???
+
+% We save our collumns for the model selection
+xModelSelection = [X_train(:,16) X_train(:,38)];
+
+% TODO: Do not normalize collumn 16 and 38 !!!
+% TODO: Remove those collumns from the model testing ?
+
 %% Dividing into two groups
 % one to train the models, the other one to test and evaluate the model
 % selection and global results
@@ -27,6 +51,13 @@ Y_Evaluation = y_train(evaluationIdx,:); % Testing data to evaluate the accuracy
 
 X_GlobalSet  = X_train(~evaluationIdx,:);
 Y_GlobalSet  = y_train(~evaluationIdx,:); % Training data for the three models
+
+% For choosing the right model
+S_Evaluation = xModelSelection(evaluationIdx, :);
+S_GlobalSet  = xModelSelection(~evaluationIdx, :);
+
+% To be sure
+assert(length(S_GlobalSet(:,1)) == length(Y_GlobalSet), 'Error: more or less values for the model selection');
 
 %% Dividing our training data for our three models
 
@@ -50,9 +81,15 @@ model3Idx = Y_GlobalSet > 9000;
 % Assure correctness
 assert(length(Y_GlobalSet) == sum(model1Idx+model2Idx+model3Idx), 'Values in no model');
 
-sum(model1Idx)
-sum(model2Idx)
-sum(model3Idx)
+% Size/proportion of each model
+
+lengthModel1 = sum(model1Idx);
+lengthModel2 = sum(model2Idx);
+lengthModel3 = sum(model3Idx);
+
+disp(['Model1 : ', num2str(lengthModel1), ' (', num2str(lengthModel1/length(Y_GlobalSet)*100),'%)']);
+disp(['Model2 : ', num2str(lengthModel2), ' (', num2str(lengthModel2/length(Y_GlobalSet)*100),'%)']);
+disp(['Model3 : ', num2str(lengthModel3), ' (', num2str(lengthModel3/length(Y_GlobalSet)*100),'%)']);
 
 % Creation of our three training set
 X_Model1 = X_GlobalSet(model1Idx,:);
@@ -63,6 +100,7 @@ y_Model2 = Y_GlobalSet(model2Idx);
 
 X_Model3 = X_GlobalSet(model3Idx,:);
 y_Model3 = Y_GlobalSet(model3Idx);
+
 
 % Lets visualise our data clouds
 
@@ -81,6 +119,13 @@ y_Model3 = Y_GlobalSet(model3Idx);
 %     plot(X_Model3(:,i), y_Model3, '.b');
 % end
 
+% Plot X(16) vs X(38)
+figure(10);
+hold on;
+plot(X_Model1(:,16), X_Model1(:,38), '.r');
+plot(X_Model2(:,16), X_Model2(:,38), '.g');
+plot(X_Model3(:,16), X_Model3(:,38), '.b');
+
 % TODO: Plot ambiguity zones in another color to see eventual correlations
 % to select disriminate criteria
 
@@ -90,13 +135,19 @@ y_Model3 = Y_GlobalSet(model3Idx);
 
 % TODO: does it works better if we do the same nomalisation for everyone ??
 
+disp('-------------------------------------------------------');
+
 k=12; % Parametter for the cross validation
 [beta1, mean1, std1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
 [beta2, mean2, std2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
 [beta3, mean3, std3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
 
+disp('-------------------------------------------------------');
+
 %% Select model for the testing data
-% When ambiguitty, we compute weight the results of the two closest model
+% We use kNN to determine in which cluster we are
+
+kNN_param = 3;
 
 % TODO: When ambiguitty, we compute weight the results of the two closest model
 
@@ -107,12 +158,17 @@ k=12; % Parametter for the cross validation
 % plot(X_train(:,38), y_train, '.');
 
 % We determine in which cluster we are
-selectionCondition1 = X_Evaluation(:,16) > 15.0;
-selectionCondition2 = X_Evaluation(:,38) < 15.5;
 
-selectionModel1 = selectionCondition2;
-selectionModel2 = bitand(~selectionCondition1, ~selectionCondition2);
-selectionModel3 = selectionCondition1;
+modelSelectionIdx = modelSelection(S_Evaluation, ...
+                                   S_GlobalSet, ...
+                                   model1Idx*1 + model2Idx*2 + model3Idx*3, ...
+                                   kNN_param);
+
+                               
+selectionModel1 = modelSelectionIdx==1;
+selectionModel2 = modelSelectionIdx==2;
+selectionModel3 = modelSelectionIdx==3;
+selectionModelOther = ~bitor(selectionModel1, bitor(selectionModel2, selectionModel3)); % Ambiguity cases
 
 X_Model1 = X_Evaluation(selectionModel1,:);
 y_Model1 = Y_Evaluation(selectionModel1);
@@ -123,17 +179,33 @@ y_Model2 = Y_Evaluation(selectionModel2);
 X_Model3 = X_Evaluation(selectionModel3,:);
 y_Model3 = Y_Evaluation(selectionModel3);
 
+% TODO: Handle those cases !!!
+X_ModelO = X_Evaluation(selectionModelOther,:);
+y_ModelO = Y_Evaluation(selectionModelOther);
+
+% TODO: Evaluate how well our model selection perform
+
 % Model visualisation
 figure(1);
 hold on;
 plot(X_Model1(:,16), y_Model1, '.r');
 plot(X_Model2(:,16), y_Model2, '.g');
 plot(X_Model3(:,16), y_Model3, '.b');
+plot(X_ModelO(:,16), y_ModelO, '.m');
 figure(2);
 hold on;
 plot(X_Model1(:,38), y_Model1, '.r');
 plot(X_Model2(:,38), y_Model2, '.g');
 plot(X_Model3(:,38), y_Model3, '.b');
+plot(X_ModelO(:,38), y_ModelO, '.m');
+figure(60);
+hold on;
+plot(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), '.r');
+plot(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), '.g');
+plot(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), '.b');
+plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
+figure(61);
+plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
 
 % Normalize data according to the corresponding model (TODO: TO REMOVE IF WE NORMALIZE THE DATA AT ONCE)
 
@@ -143,18 +215,63 @@ for i = 1:length(X_train(1,:))
     X_Model3(:,i) = (X_Model3(:,i)-mean3(i))/std3(i);
 end
 
+figure(3);
+hold on;
+plot(X_Model1(:,16), y_Model1, '.r');
+plot(X_Model2(:,16), y_Model2, '.g');
+plot(X_Model3(:,16), y_Model3, '.b');
+figure(4);
+hold on;
+plot(X_Model1(:,38), y_Model1, '.r');
+plot(X_Model2(:,38), y_Model2, '.g');
+plot(X_Model3(:,38), y_Model3, '.b');
+
 % form tX
 tX_Model1 = [ones(length(y_Model1), 1) X_Model1];
 tX_Model2 = [ones(length(y_Model2), 1) X_Model2];
 tX_Model3 = [ones(length(y_Model3), 1) X_Model3];
 
-costRMSE(y_Model1, tX_Model1, beta1)
-costRMSE(y_Model2, tX_Model2, beta2)
-costRMSE(y_Model3, tX_Model3, beta3)
+% Compute individual error for each model
+disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1, tX_Model1, beta1))]);
+disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2, tX_Model2, beta2))]);
+disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3, tX_Model3, beta3))]);
 
-% TODO: Evaluate how well our model selection perform
+% Compute the global cost
+
+% WARNING TODO: When we will do the averaged prediction, we need to make
+% sure that we don't count two times the outliers in our count cost
+
+finalCost = costMSE(y_Model1, tX_Model1, beta1) * length(y_Model1) + ...
+               costMSE(y_Model2, tX_Model2, beta2) * length(y_Model2) + ...
+               costMSE(y_Model3, tX_Model3, beta3) * length(y_Model3);
+           
+finalCost = finalCost / (length(y_Model1) + length(y_Model2) + length(y_Model3));
+
+finalCost = sqrt(2*finalCost);
+disp(['Final rmse: ' , num2str(finalCost)]);
+
+% histogram of the predicted values
+figure;
+hist ( [tX_Model1*beta1 ; tX_Model2*beta2 ; tX_Model3*beta3], 100);
+
+assert (sum(selectionModelOther) == 0, 'Warning: some variables are in no model');
+
+% Ending program
+disp('Thanks for using our script');
 
 return;
+
+
+
+
+
+
+
+
+
+
+
+
 
 %% GARBAGE CODE: TO DELETE
 
@@ -238,23 +355,3 @@ plot(datasetSize, averCostTesting);
 title('Learning curve');
 xlabel('Training set size');
 ylabel('RMSE');
-
-%%
-
-% Extract collums which allow us to discriminate between model
-% Determine which model to apply for each X value
-
-model=1;
-if model==1
-    % Extract good columns for the model
-    % Make eventual transformation
-    % Compute beta value with cross validation
-    
-    % Use the model on our training value
-elseif model==2
-    
-elseif model==3
-end
-
-% Ending program
-disp('Thanks for using our script');
