@@ -15,18 +15,27 @@ load('Oslo_regression.mat');
 
 % boxplot(X_train); % Before normalization
 
-% % Collumns useful to select the model
+% % Columns useful to select the model
 % figure(1);
 % plot(X_train(:,16), y_train, '.');
 % figure(2);
 % plot(X_train(:,38), y_train, '.');
-% % Histogram of those collumn
+
+% % Histogram of those collumn (train)
 % figure(3);
 % hist(X_train(:,16), 100);
 % figure(4);
 % hist(X_train(:,38), 100);
 % figure(5);
 % plot(X_train(:,16), X_train(:,38), '.');
+
+% % Histogram of those collumn (test)
+% figure(3);
+% hist(X_test(:,16), 100);
+% figure(4);
+% hist(X_test(:,38), 100);
+% figure(5);
+% plot(X_test(:,16), X_test(:,38), '.');
 
 %% Data transformation
 % Normalisation, dummy encoding
@@ -35,25 +44,29 @@ load('Oslo_regression.mat');
 
 % We save our collumns for the model selection
 xModelSelection = [X_train(:,16) X_train(:,38)];
+xModelSelectionTest = [X_test(:,16) X_test(:,38)];
 
 % Do we not normalize collumn 16 and 38 ???
+
+[ X_train, X_test ] = dataTransform(X_train, X_test); % Dummy encoding & cie
 
 meanX = zeros(1, length(X_train(1,:)));
 stdX = zeros(1, length(X_train(1,:)));
 for i = 1:length(X_train(1,:))
-  meanX(i) = mean(X_train(:,i));
-  stdX(i) = std(X_train(:,i));
-  
-  X_train(:,i) = (X_train(:,i)-meanX(i))/stdX(i);
-  
-  % We normalize our testing data with the same value that for our testing
-  % data (using the same mean and std that for the training)
-  X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
+    if sum(mod(X_train(:,i),1)) ~= 0 % Non categorical data
+        meanX(i) = mean(X_train(:,i));
+        stdX(i) = std(X_train(:,i));
+
+        X_train(:,i) = (X_train(:,i)-meanX(i))/stdX(i);
+
+        % We normalize our testing data with the same value that for our testing
+        % data (using the same mean and std that for the training)
+        X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
+    end
 end
 
 %figure(10);
-%boxplot(X_train); % After normalization
-
+boxplot(X_train); % After normalization
 
 % TODO: Remove those collumns from the model testing ?
 
@@ -175,7 +188,6 @@ modelSelectionIdx = modelSelection(S_Evaluation, ...
                                    S_GlobalSet, ...
                                    model1Idx*1 + model2Idx*2 + model3Idx*3, ...
                                    kNN_param);
-
                                
 selectionModel1 = modelSelectionIdx==1;
 selectionModel2 = modelSelectionIdx==2;
@@ -257,6 +269,23 @@ figure;
 hist ( [tX_Model1*beta1 ; tX_Model2*beta2 ; tX_Model3*beta3], 100);
 
 assert (sum(selectionModelOther) == 0, 'Warning: some variables are in no model');
+
+%% Make the final predictions
+% Some verifications about the consistency of the testing set
+
+% modelSelectionIdxTest = modelSelection(xModelSelectionTest, ...
+%                                        S_GlobalSet, ...
+%                                        model1Idx*1 + model2Idx*2 + model3Idx*3, ...
+%                                        kNN_param);
+%                                    
+% lengthModel1 = sum(modelSelectionIdxTest == 1);
+% lengthModel2 = sum(modelSelectionIdxTest == 2);
+% lengthModel3 = sum(modelSelectionIdxTest == 3);
+% 
+% disp(['Model1 (guess) : ', num2str(lengthModel1), ' (', num2str(lengthModel1/length(xModelSelectionTest(:,1))*100),'%)']);
+% disp(['Model2 (guess) : ', num2str(lengthModel2), ' (', num2str(lengthModel2/length(xModelSelectionTest(:,1))*100),'%)']);
+% disp(['Model3 (guess) : ', num2str(lengthModel3), ' (', num2str(lengthModel3/length(xModelSelectionTest(:,1))*100),'%)']);
+
 
 % Ending program
 disp('Thanks for using our script');
