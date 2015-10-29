@@ -1,4 +1,4 @@
-function [beta, meanX, stdX] = trainRegressionModel(X_train, y_train, k_fold, idModel)
+function [beta] = trainRegressionModel(X_train, y_train, k_fold, idModel)
 %trainRegressionModel Find the best parametters beta using cross validation
 
 disp(['Compute regression for model ',num2str(idModel)]);
@@ -11,23 +11,6 @@ y_train = y_train(idx);
 % Normalizing the data
 % TODO: Do we have to normalized binary data (0.85, -1.17) ???
 % TODO: Dummy encoding for categorical data
-
-meanX = zeros(1, length(X_train(1,:)));
-stdX = zeros(1, length(X_train(1,:)));
-for i = 1:length(X_train(1,:))
-  meanX(i) = mean(X_train(:,i));
-  stdX(i) = std(X_train(:,i));
-  
-  X_train(:,i) = (X_train(:,i)-meanX(i))/stdX(i);
-  
-  % DO NOT FORGET
-%   % We normalize our testing data with the same value that for our testing
-%   % data (using the same mean and std that for the training)
-%   X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
-end
-
-%figure(10);
-%boxplot(X_train); % After normalization
 
 % Cross validation (DON'T make the random permutaion useless)
 Indices = crossvalind('Kfold', length(y_train), k_fold);
@@ -85,16 +68,17 @@ betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)
 
 %% Plot some results (compare different methods)
 
-figure(idModel*1000 + 1);
-%hist(tX_TestSet*betaLeastSquare, 50);
-%hist(tX_TestSet*betaGradient, 50);
-hist(tX_TestSet*betaRidge);
-figure(idModel*1000 + 2);
-boxplot([costTraining costTesting]);
+% figure(idModel*1000 + 1);
+% %hist(tX_TestSet*betaLeastSquare, 50);
+% %hist(tX_TestSet*betaGradient, 50);
+% hist(tX_TestSet*betaRidge);
+% figure(idModel*1000 + 2);
+% boxplot([costTraining costTesting]);
 
 beta = betaRidge;
 
 disp(['Cost model ', num2str(idModel), ': ', num2str(mean(costTesting(:, 3)))]);
+
 % figure(3);
 % plot(tX_TestSet, tX_TestSet*betaRidge, '.g');
 % figure(4);

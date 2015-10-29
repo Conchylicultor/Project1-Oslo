@@ -31,12 +31,30 @@ load('Oslo_regression.mat');
 %% Data transformation
 % Normalisation, dummy encoding
 
-% Random permutation here ???
+% Random permutation here or later (for now in trainRegressionModel) ???
 
 % We save our collumns for the model selection
 xModelSelection = [X_train(:,16) X_train(:,38)];
 
-% TODO: Do not normalize collumn 16 and 38 !!!
+% Do we not normalize collumn 16 and 38 ???
+
+meanX = zeros(1, length(X_train(1,:)));
+stdX = zeros(1, length(X_train(1,:)));
+for i = 1:length(X_train(1,:))
+  meanX(i) = mean(X_train(:,i));
+  stdX(i) = std(X_train(:,i));
+  
+  X_train(:,i) = (X_train(:,i)-meanX(i))/stdX(i);
+  
+  % We normalize our testing data with the same value that for our testing
+  % data (using the same mean and std that for the training)
+  X_test(:,i) = (X_test(:,i)-meanX(i))/stdX(i);
+end
+
+%figure(10);
+%boxplot(X_train); % After normalization
+
+
 % TODO: Remove those collumns from the model testing ?
 
 %% Dividing into two groups
@@ -119,12 +137,12 @@ y_Model3 = Y_GlobalSet(model3Idx);
 %     plot(X_Model3(:,i), y_Model3, '.b');
 % end
 
-% Plot X(16) vs X(38)
-figure(10);
-hold on;
-plot(X_Model1(:,16), X_Model1(:,38), '.r');
-plot(X_Model2(:,16), X_Model2(:,38), '.g');
-plot(X_Model3(:,16), X_Model3(:,38), '.b');
+% % Plot X(16) vs X(38)
+% figure(10);
+% hold on;
+% plot(X_Model1(:,16), X_Model1(:,38), '.r');
+% plot(X_Model2(:,16), X_Model2(:,38), '.g');
+% plot(X_Model3(:,16), X_Model3(:,38), '.b');
 
 % TODO: Plot ambiguity zones in another color to see eventual correlations
 % to select disriminate criteria
@@ -138,24 +156,18 @@ plot(X_Model3(:,16), X_Model3(:,38), '.b');
 disp('-------------------------------------------------------');
 
 k=12; % Parametter for the cross validation
-[beta1, mean1, std1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
-[beta2, mean2, std2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
-[beta3, mean3, std3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
+[beta1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
+[beta2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
+[beta3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
 
 disp('-------------------------------------------------------');
 
 %% Select model for the testing data
 % We use kNN to determine in which cluster we are
 
-kNN_param = 3;
-
 % TODO: When ambiguitty, we compute weight the results of the two closest model
 
-% We decide the cluster from some variables
-% figure(1);
-% plot(X_train(:,16), y_train, '.');
-% figure(2);
-% plot(X_train(:,38), y_train, '.');
+kNN_param = 3;
 
 % We determine in which cluster we are
 
@@ -186,45 +198,18 @@ y_ModelO = Y_Evaluation(selectionModelOther);
 % TODO: Evaluate how well our model selection perform
 
 % Model visualisation
-figure(1);
-hold on;
-plot(X_Model1(:,16), y_Model1, '.r');
-plot(X_Model2(:,16), y_Model2, '.g');
-plot(X_Model3(:,16), y_Model3, '.b');
-plot(X_ModelO(:,16), y_ModelO, '.m');
-figure(2);
-hold on;
-plot(X_Model1(:,38), y_Model1, '.r');
-plot(X_Model2(:,38), y_Model2, '.g');
-plot(X_Model3(:,38), y_Model3, '.b');
-plot(X_ModelO(:,38), y_ModelO, '.m');
-figure(60);
-hold on;
-plot(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), '.r');
-plot(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), '.g');
-plot(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), '.b');
-plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
-figure(61);
-plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
 
-% Normalize data according to the corresponding model (TODO: TO REMOVE IF WE NORMALIZE THE DATA AT ONCE)
-
-for i = 1:length(X_train(1,:))
-    X_Model1(:,i) = (X_Model1(:,i)-mean1(i))/std1(i);
-    X_Model2(:,i) = (X_Model2(:,i)-mean2(i))/std2(i);
-    X_Model3(:,i) = (X_Model3(:,i)-mean3(i))/std3(i);
-end
-
-figure(3);
-hold on;
-plot(X_Model1(:,16), y_Model1, '.r');
-plot(X_Model2(:,16), y_Model2, '.g');
-plot(X_Model3(:,16), y_Model3, '.b');
-figure(4);
-hold on;
-plot(X_Model1(:,38), y_Model1, '.r');
-plot(X_Model2(:,38), y_Model2, '.g');
-plot(X_Model3(:,38), y_Model3, '.b');
+% figure(60);
+% hold on;
+% plot(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), '.r');
+% plot(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), '.g');
+% plot(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), '.b');
+% plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
+% 
+% if sum(selectionModelOther) ~= 0
+%     figure(61);
+%     plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
+% end
 
 % form tX
 tX_Model1 = [ones(length(y_Model1), 1) X_Model1];
@@ -236,14 +221,31 @@ disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1, tX_Model1, beta1))]);
 disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2, tX_Model2, beta2))]);
 disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3, tX_Model3, beta3))]);
 
+% Data visualisation
+
+figure(60);
+subplot(1,2,1);
+hold on;
+plot(X_Model1(:,16), y_Model1, '.r');
+plot(X_Model2(:,16), y_Model2, '.g');
+plot(X_Model3(:,16), y_Model3, '.b');
+title('Ground truth');
+
+subplot(1,2,2);
+hold on;
+plot(X_Model1(:,16), abs(y_Model1 - tX_Model1*beta1), '.r');
+plot(X_Model2(:,16), abs(y_Model2 - tX_Model2*beta2), '.g');
+plot(X_Model3(:,16), abs(y_Model3 - tX_Model3*beta3), '.b');
+title('Prediction errors');
+
 % Compute the global cost
 
 % WARNING TODO: When we will do the averaged prediction, we need to make
 % sure that we don't count two times the outliers in our count cost
 
 finalCost = costMSE(y_Model1, tX_Model1, beta1) * length(y_Model1) + ...
-               costMSE(y_Model2, tX_Model2, beta2) * length(y_Model2) + ...
-               costMSE(y_Model3, tX_Model3, beta3) * length(y_Model3);
+            costMSE(y_Model2, tX_Model2, beta2) * length(y_Model2) + ...
+            costMSE(y_Model3, tX_Model3, beta3) * length(y_Model3);
            
 finalCost = finalCost / (length(y_Model1) + length(y_Model2) + length(y_Model3));
 
@@ -272,8 +274,10 @@ return;
 
 
 
-
+%%
 %% GARBAGE CODE: TO DELETE
+%%
+%%
 
 % X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
 % y_trainModel1 = y_train(X_train(:,16) > 15.0);
