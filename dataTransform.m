@@ -57,7 +57,9 @@ end
 
 function [Y] = basicMath(X)
     %Y = X;
-    Y = X.*X; % Much better
+    %Y = X.*X; % Much better
+    Y = X.*X.*X; % Much much better
+    %Y = X.*X.*X.*X;
     
     %Y = exp(X); % Worst
     %Y = 1./X; % If X = 0 ???

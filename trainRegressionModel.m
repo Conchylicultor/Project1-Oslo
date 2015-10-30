@@ -56,7 +56,7 @@ end
 %% Compute the cost for the ridge regression (and extract the right value of beta)
 
 meanCostRidge = mean(costRidgeTesting);
-[~, minCostRidgeIdx] = min(meanCostRidge);
+[~, minCostRidgeIdx] = min(meanCostRidge); % Select the best value
 
 %valsLambda(minCostRidgeIdx) % Debug: Best value of lambda
 
@@ -78,7 +78,13 @@ betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)
 beta = betaRidge;
 cost = mean(costTesting(:, 3));
 
-disp(['Cost model ', num2str(idModel), ': ', num2str(cost)]);
+global allTrainingCost;
+global allTestingCost;
+
+allTrainingCost(idModel, k_fold-1) = mean(costTraining(:, 3));
+allTestingCost(idModel, k_fold-1) =  mean(costTesting(:, 3));
+
+disp(['Cost model ', num2str(idModel), ': ', num2str(cost) , ', std: ', num2str(std(costTesting(:, 3)))]);
 
 % figure(3);
 % plot(tX_TestSet, tX_TestSet*betaRidge, '.g');

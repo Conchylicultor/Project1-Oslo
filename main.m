@@ -3,7 +3,7 @@
 
 % Clear workspace
 clc;
-clear all;
+%clear all;
 close all;
 
 % Loading data
@@ -47,8 +47,8 @@ load('Oslo_regression.mat');
 % We save our collumns for the model selection
 xModelSelection = [X_train(:,16) X_train(:,38)];
 xModelSelectionTest = [X_test(:,16) X_test(:,38)];
-%xModelSelection = [X_train(:,16).*X_train(:,16) X_train(:,38).*X_train(:,38)];
-%xModelSelectionTest = [X_test(:,16).*X_test(:,16) X_test(:,38).*X_test(:,38)];
+%xModelSelection = [X_train(:,16).^3 X_train(:,38).^3 ];
+%xModelSelectionTest = [X_test(:,16).^3  X_test(:,38).^3 ];
 
 % Do we not normalize collumn 16 and 38 ???
 
@@ -70,7 +70,7 @@ for i = 1:length(X_train(1,:))
 end
 
 %figure(10);
-boxplot(X_train); % After normalization
+%boxplot(X_train); % After normalization
 
 % TODO: Remove those collumns from the model testing ?
 
@@ -127,14 +127,14 @@ disp(['Model2 : ', num2str(lengthModel2), ' (', num2str(lengthModel2/length(Y_Gl
 disp(['Model3 : ', num2str(lengthModel3), ' (', num2str(lengthModel3/length(Y_GlobalSet)*100),'%)']);
 
 % Creation of our three training set
-X_Model1 = X_GlobalSet(model1Idx,:);
-y_Model1 = Y_GlobalSet(model1Idx);
+X_Model1_Train = X_GlobalSet(model1Idx,:);
+y_Model1_Train = Y_GlobalSet(model1Idx);
 
-X_Model2 = X_GlobalSet(model2Idx,:);
-y_Model2 = Y_GlobalSet(model2Idx);
+X_Model2_Train = X_GlobalSet(model2Idx,:);
+y_Model2_Train = Y_GlobalSet(model2Idx);
 
-X_Model3 = X_GlobalSet(model3Idx,:);
-y_Model3 = Y_GlobalSet(model3Idx);
+X_Model3_Train = X_GlobalSet(model3Idx,:);
+y_Model3_Train = Y_GlobalSet(model3Idx);
 
 
 % Lets visualise our data clouds
@@ -174,14 +174,35 @@ y_Model3 = Y_GlobalSet(model3Idx);
 % We use k-cross validation to extract the bests parametters for the three
 % models
 
-% TODO: does it works better if we do the same nomalisation for everyone ??
-
 disp('-------------------------------------------------------');
 
-k=12; % Parametter for the cross validation
-[beta1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
-[beta2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
-[beta3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
+global allTrainingCost;
+global allTestingCost;
+
+%allK = 2:20;% Parametter for the cross validation
+allK = 15:15;
+
+allTrainingCost = zeros(3, length(allK));
+allTestingCost = zeros(3, length(allK));
+for k=allK
+    [beta1] = trainRegressionModel(X_Model1_Train, y_Model1_Train, k, 1);
+    [beta2] = trainRegressionModel(X_Model2_Train, y_Model2_Train, k, 2);
+    [beta3] = trainRegressionModel(X_Model3_Train, y_Model3_Train, k, 3);
+end
+
+% Plot the learning curve
+% figure (100);
+% for i = 1:3
+%     subplot(2,2,i);
+%     hold on;
+%     datasetSize = 100 - 100./allK; % Size of the training set
+%     plot(datasetSize, allTrainingCost(i,:));
+%     plot(datasetSize, allTestingCost(i,:));
+%     title(['Learning curve, Model ', num2str(i)]);
+%     xlabel('Training set size (%)');
+%     ylabel('RMSE');
+%     legend('Training RMSE', 'Testing RMSE');
+% end
 
 % Test data reduction
 
@@ -232,24 +253,42 @@ modelSelectionIdx = modelSelection(S_Evaluation, ...
                                    S_GlobalSet, ...
                                    model1Idx*1 + model2Idx*2 + model3Idx*3, ...
                                    kNN_param);
-                               
+
+% Ground truth
+selectionModel1Truth = Y_Evaluation <= 4100;
+selectionModel2Truth = bitand(Y_Evaluation > 4100,Y_Evaluation <= 8800);
+selectionModel3Truth = Y_Evaluation > 8800;
+
+% Model selection
 selectionModel1 = modelSelectionIdx==1;
 selectionModel2 = modelSelectionIdx==2;
 selectionModel3 = modelSelectionIdx==3;
 selectionModelOther = ~bitor(selectionModel1, bitor(selectionModel2, selectionModel3)); % Ambiguity cases
 
-X_Model1 = X_Evaluation(selectionModel1,:);
-y_Model1 = Y_Evaluation(selectionModel1);
+% Model selection evaluation
+modelSelectionPerf = sum(abs(selectionModel1Truth - selectionModel1)) + ...
+                     sum(abs(selectionModel2Truth - selectionModel2)) + ...
+                     sum(abs(selectionModel3Truth - selectionModel3));
+modelSelectionPerf = modelSelectionPerf * 100 / length(Y_Evaluation);
 
-X_Model2 = X_Evaluation(selectionModel2,:);
-y_Model2 = Y_Evaluation(selectionModel2);
+disp(['Selection performance error: ', num2str(modelSelectionPerf), '%']);
 
-X_Model3 = X_Evaluation(selectionModel3,:);
-y_Model3 = Y_Evaluation(selectionModel3);
+X_Model1_Test = X_Evaluation(selectionModel1,:);
+y_Model1_Test = Y_Evaluation(selectionModel1);
 
-% TODO: Handle those cases !!!
-X_ModelO = X_Evaluation(selectionModelOther,:);
-y_ModelO = Y_Evaluation(selectionModelOther);
+X_Model2_Test = X_Evaluation(selectionModel2,:);
+y_Model2_Test = Y_Evaluation(selectionModel2);
+
+X_Model3_Test = X_Evaluation(selectionModel3,:);
+y_Model3_Test = Y_Evaluation(selectionModel3);
+
+% For outliers, we try with more features
+X_ModelO_Test = X_Evaluation(selectionModelOther,:);
+y_ModelO_Test = Y_Evaluation(selectionModelOther);
+
+outliersDetection(X_Model1_Train, X_Model1_Test);
+outliersDetection(X_Model2_Train, X_Model2_Test);
+outliersDetection(X_Model3_Train, X_Model3_Test);
 
 % TODO: Evaluate how well our model selection perform
 
@@ -261,56 +300,70 @@ y_ModelO = Y_Evaluation(selectionModelOther);
 % plot(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), '.g');
 % plot(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), '.b');
 % plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
-% 
+
+% 3D Visualization of our clusters (see wrong classification)
+% figure(62);
+% hold on;
+% scatter3(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), y_Model1_Test, '.r');
+% scatter3(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), y_Model2_Test, '.g');
+% scatter3(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), y_Model3_Test, '.b');
+% scatter3(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), y_ModelO_Test, '.m');
+
 % if sum(selectionModelOther) ~= 0
 %     figure(61);
 %     plot(S_Evaluation(selectionModelOther,1), S_Evaluation(selectionModelOther,2), '.m');
 % end
 
 % form tX
-tX_Model1 = [ones(length(y_Model1), 1) X_Model1];
-tX_Model2 = [ones(length(y_Model2), 1) X_Model2];
-tX_Model3 = [ones(length(y_Model3), 1) X_Model3];
+tX_Model1_Test = [ones(length(y_Model1_Test), 1) X_Model1_Test];
+tX_Model2_Test = [ones(length(y_Model2_Test), 1) X_Model2_Test];
+tX_Model3_Test = [ones(length(y_Model3_Test), 1) X_Model3_Test];
 
 % Compute individual error for each model
-disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1, tX_Model1, beta1))]);
-disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2, tX_Model2, beta2))]);
-disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3, tX_Model3, beta3))]);
+disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1_Test, tX_Model1_Test, beta1))]);
+disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2_Test, tX_Model2_Test, beta2))]);
+disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3_Test, tX_Model3_Test, beta3))]);
 
 % Data visualisation
 
-figure(60);
-subplot(1,2,1);
-hold on;
-plot(X_Model1(:,16), y_Model1, '.r');
-plot(X_Model2(:,16), y_Model2, '.g');
-plot(X_Model3(:,16), y_Model3, '.b');
-title('Ground truth');
-
-subplot(1,2,2);
-hold on;
-plot(X_Model1(:,16), abs(y_Model1 - tX_Model1*beta1), '.r');
-plot(X_Model2(:,16), abs(y_Model2 - tX_Model2*beta2), '.g');
-plot(X_Model3(:,16), abs(y_Model3 - tX_Model3*beta3), '.b');
-title('Prediction errors');
+% figure(60);
+% subplot(1,2,1);
+% hold on;
+% plot(X_Model1_Test(:,16), y_Model1_Test, '.r');
+% plot(X_Model2_Test(:,16), y_Model2_Test, '.g');
+% plot(X_Model3_Test(:,16), y_Model3_Test, '.b');
+% title('Ground truth');
+% 
+% subplot(1,2,2);
+% hold on;
+% plot(X_Model1_Test(:,16), abs(y_Model1_Test - tX_Model1_Test*beta1), '.r');
+% plot(X_Model2_Test(:,16), abs(y_Model2_Test - tX_Model2_Test*beta2), '.g');
+% plot(X_Model3_Test(:,16), abs(y_Model3_Test - tX_Model3_Test*beta3), '.b');
+% title('Prediction errors');
+% xlabel('X');
+% ylabel('Error (abs(y-tX*beta))');
 
 % Compute the global cost
 
 % WARNING TODO: When we will do the averaged prediction, we need to make
 % sure that we don't count two times the outliers in our count cost
 
-finalCost = costMSE(y_Model1, tX_Model1, beta1) * length(y_Model1) + ...
-            costMSE(y_Model2, tX_Model2, beta2) * length(y_Model2) + ...
-            costMSE(y_Model3, tX_Model3, beta3) * length(y_Model3);
+finalCost = costMSE(y_Model1_Test, tX_Model1_Test, beta1) * length(y_Model1_Test) + ...
+            costMSE(y_Model2_Test, tX_Model2_Test, beta2) * length(y_Model2_Test) + ...
+            costMSE(y_Model3_Test, tX_Model3_Test, beta3) * length(y_Model3_Test);
            
-finalCost = finalCost / (length(y_Model1) + length(y_Model2) + length(y_Model3));
+finalCost = finalCost / (length(y_Model1_Test) + length(y_Model2_Test) + length(y_Model3_Test));
 
 finalCost = sqrt(2*finalCost);
 disp(['Final rmse: ' , num2str(finalCost)]);
 
+% We record the cost to make statistics
+global currentCost;
+currentCost = finalCost;
+
 % histogram of the predicted values
-figure;
-hist ( [tX_Model1*beta1 ; tX_Model2*beta2 ; tX_Model3*beta3], 100);
+% figure;
+% hist ( [tX_Model1_Test*beta1 ; tX_Model2_Test*beta2 ; tX_Model3_Test*beta3], 100);
 
 assert (sum(selectionModelOther) == 0, 'Warning: some variables are in no model');
 
