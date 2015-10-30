@@ -8,20 +8,38 @@ idx = randperm(length(y_train)); % Training
 X_train = X_train(idx,:);
 y_train = y_train(idx);
 
-% Normalizing the data
-% TODO: Do we have to normalized binary data (0.85, -1.17) ???
-% TODO: Dummy encoding for categorical data
+% Data already normalized
 
+% Form tX
+tX_train = [ones(length(y_train), 1) X_train];
+
+global final;
+if(final)
+    if idModel == 1
+        lambda = 0.0335;
+    elseif idModel == 2
+        lambda = 0.1016;
+    elseif idModel == 3
+        lambda = 0.0335;
+    else
+        disp('Fatal error: No value of lambda');
+    end
+    
+    beta = ridgeRegression(y_train, tX_train, lambda);
+    cost = costRMSE(y_train, tX_train, beta);
+    
+    disp(['Train cost ', num2str(idModel),': ',num2str(cost),' computed with fixed lambda']);
+    
+    return;
+end
+    
 % Cross validation (DON'T make the random permutaion useless)
 Indices = crossvalind('Kfold', length(y_train), k_fold);
-
-% form tX
-tX_train = [ones(length(y_train), 1) X_train];
 
 costTraining = zeros(k_fold,3);
 costTesting = zeros(k_fold,3);
 
-valsLambda = logspace(-1,3,30);
+valsLambda = logspace(-3,3,600);
 costRidgeTraining = zeros(k_fold, length(valsLambda));
 costRidgeTesting = zeros(k_fold, length(valsLambda));
     
@@ -58,7 +76,12 @@ end
 meanCostRidge = mean(costRidgeTesting);
 [~, minCostRidgeIdx] = min(meanCostRidge); % Select the best value
 
-%valsLambda(minCostRidgeIdx) % Debug: Best value of lambda
+valsLambda(minCostRidgeIdx) % Best value of lambda
+figure(idModel*1000 + 10);
+semilogx(valsLambda, mean(costRidgeTesting),'-sb');
+hold on
+semilogx(valsLambda, mean(costRidgeTraining),'-sr');
+grid on
 
 costTraining(:,3) = costRidgeTraining(:,minCostRidgeIdx);
 costTesting(:,3) = costRidgeTesting(:,minCostRidgeIdx);

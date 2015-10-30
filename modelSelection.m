@@ -5,8 +5,7 @@ function [ modelSelectionIdx ] = modelSelection(S_Evaluation, ...
 %modelSelection Apply KNN to select the closest model for each 
 
 % Plot imput data
-figure (50);
-%colormap(jet);
+figure(50);
 map = [1, 0, 0
        1, 0.6, 0
        1, 0.6, 0
@@ -17,6 +16,7 @@ map = [1, 0, 0
        0.8, 0.6, 0.5
        0, 0, 1];
 colormap(map);
+
 subplot(1,2,1);
 scatter(S_GlobalSet(:,1) ,S_GlobalSet(:,2), 4, modelIdx);
 title('Training model selection');
@@ -36,12 +36,12 @@ scatter(S_Evaluation(:,1) ,S_Evaluation(:,2), 4, modelSelectionIdx);
 title('Prediction model selection');
 set(gca,'Color',[0.2 0.4 0.4]);
 
-% Get outliers (eventually)
-figure(51);
-outliersIdx = mod(modelSelectionIdx,1) ~= 0;
-plot(S_Evaluation(outliersIdx,1) ,S_Evaluation(outliersIdx,2), '.m');
-title('Outliers points');
-set(gca,'Color',[0.2 0.4 0.4]);
+% % Get outliers (eventually)
+% figure(51);
+% outliersIdx = mod(modelSelectionIdx,1) ~= 0;
+% plot(S_Evaluation(outliersIdx,1) ,S_Evaluation(outliersIdx,2), '.m');
+% title('Outliers points');
+% set(gca,'Color',[0.2 0.4 0.4]);
 
 end
 

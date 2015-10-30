@@ -3,13 +3,15 @@
 
 % Clear workspace
 clc;
-%clear all;
+clear all;
 close all;
 
 % Loading data
 disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
+global final;
+final = 1;
 %% Some data visualization
 % to spot the categorical data for instance
 
@@ -45,7 +47,7 @@ load('Oslo_regression.mat');
 % Random permutation here or later (for now in trainRegressionModel) ???
 
 % We save our collumns for the model selection
-xModelSelection = [X_train(:,16) X_train(:,38)];
+xModelSelectionTrain = [X_train(:,16) X_train(:,38)];
 xModelSelectionTest = [X_test(:,16) X_test(:,38)];
 %xModelSelection = [X_train(:,16).^3 X_train(:,38).^3 ];
 %xModelSelectionTest = [X_test(:,16).^3  X_test(:,38).^3 ];
@@ -78,21 +80,32 @@ end
 % one to train the models, the other one to test and evaluate the model
 % selection and global results
 
-% Separate 90%-10%
-evaluationIdx = (crossvalind('Kfold', length(y_train), 10) == 1); % Select the final testing set
+if final
+    X_Evaluation = X_test; % Testing data
 
-X_Evaluation = X_train(evaluationIdx,:);
-Y_Evaluation = y_train(evaluationIdx,:); % Testing data to evaluate the accuracy of the model selection
+    X_GlobalSet  = X_train;
+    Y_GlobalSet  = y_train; % Training data for the three models
 
-X_GlobalSet  = X_train(~evaluationIdx,:);
-Y_GlobalSet  = y_train(~evaluationIdx,:); % Training data for the three models
+    % For choosing the right model
+    S_Evaluation = xModelSelectionTest;
+    S_GlobalSet  = xModelSelectionTrain;
+else
+    % Separate 90%-10%
+    evaluationIdx = (crossvalind('Kfold', length(y_train), 10) == 1); % Select the final testing set
 
-% For choosing the right model
-S_Evaluation = xModelSelection(evaluationIdx, :);
-S_GlobalSet  = xModelSelection(~evaluationIdx, :);
+    X_Evaluation = X_train(evaluationIdx,:);
+    Y_Evaluation = y_train(evaluationIdx,:); % Testing data to evaluate the accuracy of the model selection
 
-% To be sure
-assert(length(S_GlobalSet(:,1)) == length(Y_GlobalSet), 'Error: more or less values for the model selection');
+    X_GlobalSet  = X_train(~evaluationIdx,:);
+    Y_GlobalSet  = y_train(~evaluationIdx,:); % Training data for the three models
+
+    % For choosing the right model
+    S_Evaluation = xModelSelectionTrain(evaluationIdx, :);
+    S_GlobalSet  = xModelSelectionTrain(~evaluationIdx, :);
+
+    % To be sure
+    assert(length(S_GlobalSet(:,1)) == length(Y_GlobalSet), 'Error: more or less values for the model selection');
+end
 
 %% Dividing our training data for our three models
 
@@ -180,7 +193,7 @@ global allTrainingCost;
 global allTestingCost;
 
 %allK = 2:20;% Parametter for the cross validation
-allK = 15:15;
+allK = 15:15; % For final, the k value does not count
 
 allTrainingCost = zeros(3, length(allK));
 allTestingCost = zeros(3, length(allK));
@@ -254,43 +267,53 @@ modelSelectionIdx = modelSelection(S_Evaluation, ...
                                    model1Idx*1 + model2Idx*2 + model3Idx*3, ...
                                    kNN_param);
 
-% Ground truth
-selectionModel1Truth = Y_Evaluation <= 4100;
-selectionModel2Truth = bitand(Y_Evaluation > 4100,Y_Evaluation <= 8800);
-selectionModel3Truth = Y_Evaluation > 8800;
-
 % Model selection
 selectionModel1 = modelSelectionIdx==1;
 selectionModel2 = modelSelectionIdx==2;
 selectionModel3 = modelSelectionIdx==3;
 selectionModelOther = ~bitor(selectionModel1, bitor(selectionModel2, selectionModel3)); % Ambiguity cases
 
-% Model selection evaluation
-modelSelectionPerf = sum(abs(selectionModel1Truth - selectionModel1)) + ...
-                     sum(abs(selectionModel2Truth - selectionModel2)) + ...
-                     sum(abs(selectionModel3Truth - selectionModel3));
-modelSelectionPerf = modelSelectionPerf * 100 / length(Y_Evaluation);
+lengthModel1 = sum(selectionModel1);
+lengthModel2 = sum(selectionModel2);
+lengthModel3 = sum(selectionModel3);
 
-disp(['Selection performance error: ', num2str(modelSelectionPerf), '%']);
+disp(['Model1 (guess) : ', num2str(lengthModel1), ' (', num2str(lengthModel1/length(modelSelectionIdx)*100),'%)']);
+disp(['Model2 (guess) : ', num2str(lengthModel2), ' (', num2str(lengthModel2/length(modelSelectionIdx)*100),'%)']);
+disp(['Model3 (guess) : ', num2str(lengthModel3), ' (', num2str(lengthModel3/length(modelSelectionIdx)*100),'%)']);
+
+
+if ~final
+    % Ground truth
+    selectionModel1Truth = Y_Evaluation <= 4100;
+    selectionModel2Truth = bitand(Y_Evaluation > 4100,Y_Evaluation <= 8800);
+    selectionModel3Truth = Y_Evaluation > 8800;
+    
+    % Model selection evaluation
+    modelSelectionPerf = sum(abs(selectionModel1Truth - selectionModel1)) + ...
+                         sum(abs(selectionModel2Truth - selectionModel2)) + ...
+                         sum(abs(selectionModel3Truth - selectionModel3));
+    modelSelectionPerf = modelSelectionPerf * 100 / length(Y_Evaluation);
+
+    disp(['Selection performance error: ', num2str(modelSelectionPerf), '%']);
+end
 
 X_Model1_Test = X_Evaluation(selectionModel1,:);
-y_Model1_Test = Y_Evaluation(selectionModel1);
-
 X_Model2_Test = X_Evaluation(selectionModel2,:);
-y_Model2_Test = Y_Evaluation(selectionModel2);
-
 X_Model3_Test = X_Evaluation(selectionModel3,:);
-y_Model3_Test = Y_Evaluation(selectionModel3);
 
-% For outliers, we try with more features
-X_ModelO_Test = X_Evaluation(selectionModelOther,:);
-y_ModelO_Test = Y_Evaluation(selectionModelOther);
+X_ModelO_Test = X_Evaluation(selectionModelOther,:); % For outliers, we could try with more features
+
+if ~final
+    y_Model1_Test = Y_Evaluation(selectionModel1);
+    y_Model2_Test = Y_Evaluation(selectionModel2);
+    y_Model3_Test = Y_Evaluation(selectionModel3);
+    
+    y_ModelO_Test = Y_Evaluation(selectionModelOther);
+end
 
 outliersDetection(X_Model1_Train, X_Model1_Test);
 outliersDetection(X_Model2_Train, X_Model2_Test);
-outliersDetection(X_Model3_Train, X_Model3_Test);
-
-% TODO: Evaluate how well our model selection perform
+outliersDetection(X_Model3_Train, X_Model3_Test); % Unfortunatly not complete
 
 % Model visualisation
 
@@ -315,74 +338,103 @@ outliersDetection(X_Model3_Train, X_Model3_Test);
 % end
 
 % form tX
-tX_Model1_Test = [ones(length(y_Model1_Test), 1) X_Model1_Test];
-tX_Model2_Test = [ones(length(y_Model2_Test), 1) X_Model2_Test];
-tX_Model3_Test = [ones(length(y_Model3_Test), 1) X_Model3_Test];
+tX_Model1_Test = [ones(length(X_Model1_Test(:,1)), 1) X_Model1_Test];
+tX_Model2_Test = [ones(length(X_Model2_Test(:,1)), 1) X_Model2_Test];
+tX_Model3_Test = [ones(length(X_Model3_Test(:,1)), 1) X_Model3_Test];
 
-% Compute individual error for each model
-disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1_Test, tX_Model1_Test, beta1))]);
-disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2_Test, tX_Model2_Test, beta2))]);
-disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3_Test, tX_Model3_Test, beta3))]);
+if ~final
+    % Compute individual error for each model
+    disp(['Model 1 perfs: ' , num2str(costRMSE(y_Model1_Test, tX_Model1_Test, beta1))]);
+    disp(['Model 2 perfs: ' , num2str(costRMSE(y_Model2_Test, tX_Model2_Test, beta2))]);
+    disp(['Model 3 perfs: ' , num2str(costRMSE(y_Model3_Test, tX_Model3_Test, beta3))]);
 
-% Data visualisation
+    % Data visualisation
 
-% figure(60);
-% subplot(1,2,1);
-% hold on;
-% plot(X_Model1_Test(:,16), y_Model1_Test, '.r');
-% plot(X_Model2_Test(:,16), y_Model2_Test, '.g');
-% plot(X_Model3_Test(:,16), y_Model3_Test, '.b');
-% title('Ground truth');
-% 
-% subplot(1,2,2);
-% hold on;
-% plot(X_Model1_Test(:,16), abs(y_Model1_Test - tX_Model1_Test*beta1), '.r');
-% plot(X_Model2_Test(:,16), abs(y_Model2_Test - tX_Model2_Test*beta2), '.g');
-% plot(X_Model3_Test(:,16), abs(y_Model3_Test - tX_Model3_Test*beta3), '.b');
-% title('Prediction errors');
-% xlabel('X');
-% ylabel('Error (abs(y-tX*beta))');
+    % figure(60);
+    % subplot(1,2,1);
+    % hold on;
+    % plot(X_Model1_Test(:,16), y_Model1_Test, '.r');
+    % plot(X_Model2_Test(:,16), y_Model2_Test, '.g');
+    % plot(X_Model3_Test(:,16), y_Model3_Test, '.b');
+    % title('Ground truth');
+    % 
+    % subplot(1,2,2);
+    % hold on;
+    % plot(X_Model1_Test(:,16), abs(y_Model1_Test - tX_Model1_Test*beta1), '.r');
+    % plot(X_Model2_Test(:,16), abs(y_Model2_Test - tX_Model2_Test*beta2), '.g');
+    % plot(X_Model3_Test(:,16), abs(y_Model3_Test - tX_Model3_Test*beta3), '.b');
+    % title('Prediction errors');
+    % xlabel('X');
+    % ylabel('Error (abs(y-tX*beta))');
 
-% Compute the global cost
+    % Compute the global cost
 
-% WARNING TODO: When we will do the averaged prediction, we need to make
-% sure that we don't count two times the outliers in our count cost
+    % WARNING: When we will do the averaged prediction, we need to make
+    % sure that we don't count two times the outliers in our count cost
 
-finalCost = costMSE(y_Model1_Test, tX_Model1_Test, beta1) * length(y_Model1_Test) + ...
-            costMSE(y_Model2_Test, tX_Model2_Test, beta2) * length(y_Model2_Test) + ...
-            costMSE(y_Model3_Test, tX_Model3_Test, beta3) * length(y_Model3_Test);
-           
-finalCost = finalCost / (length(y_Model1_Test) + length(y_Model2_Test) + length(y_Model3_Test));
+    finalCost = costMSE(y_Model1_Test, tX_Model1_Test, beta1) * length(y_Model1_Test) + ...
+                costMSE(y_Model2_Test, tX_Model2_Test, beta2) * length(y_Model2_Test) + ...
+                costMSE(y_Model3_Test, tX_Model3_Test, beta3) * length(y_Model3_Test);
 
-finalCost = sqrt(2*finalCost);
-disp(['Final rmse: ' , num2str(finalCost)]);
+    finalCost = finalCost / (length(y_Model1_Test) + length(y_Model2_Test) + length(y_Model3_Test));
 
-% We record the cost to make statistics
-global currentCost;
-currentCost = finalCost;
+    finalCost = sqrt(2*finalCost);
+    disp(['Final rmse: ' , num2str(finalCost)]);
+
+    % We record the cost to make statistics
+    global currentCost;
+    currentCost = finalCost;
+
+end
+
+y_Test_Model1 = tX_Model1_Test*beta1;
+y_Test_Model2 = tX_Model2_Test*beta2;
+y_Test_Model3 = tX_Model3_Test*beta3;
 
 % histogram of the predicted values
-% figure;
-% hist ( [tX_Model1_Test*beta1 ; tX_Model2_Test*beta2 ; tX_Model3_Test*beta3], 100);
+figure;
+hist ( [y_Test_Model1 ; y_Test_Model2 ; y_Test_Model3], 100);
+title('Histogram of the predictions')
+xlabel('Predicted Y')
+ylabel('Frequency')
 
 assert (sum(selectionModelOther) == 0, 'Warning: some variables are in no model');
 
-%% Make the final predictions
+%% Make the final predictions and recording
 % Some verifications about the consistency of the testing set
 
-% modelSelectionIdxTest = modelSelection(xModelSelectionTest, ...
-%                                        S_GlobalSet, ...
-%                                        model1Idx*1 + model2Idx*2 + model3Idx*3, ...
-%                                        kNN_param);
-%                                    
-% lengthModel1 = sum(modelSelectionIdxTest == 1);
-% lengthModel2 = sum(modelSelectionIdxTest == 2);
-% lengthModel3 = sum(modelSelectionIdxTest == 3);
-% 
-% disp(['Model1 (guess) : ', num2str(lengthModel1), ' (', num2str(lengthModel1/length(xModelSelectionTest(:,1))*100),'%)']);
-% disp(['Model2 (guess) : ', num2str(lengthModel2), ' (', num2str(lengthModel2/length(xModelSelectionTest(:,1))*100),'%)']);
-% disp(['Model3 (guess) : ', num2str(lengthModel3), ' (', num2str(lengthModel3/length(xModelSelectionTest(:,1))*100),'%)']);
+% 3D Visualization of our prediction
+figure(500);
+hold on;
+scatter3(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), y_Test_Model1, '.r');
+scatter3(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), y_Test_Model2, '.g');
+scatter3(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), y_Test_Model3, '.b');
 
+% Restore the results in the right order
+compteurModel1 = 1;
+compteurModel2 = 1;
+compteurModel3 = 1;
+y_Final=zeros(length(modelSelectionIdx),1);
+for i=1:length(modelSelectionIdx)
+    if modelSelectionIdx(i) == 1
+        y_Final(i) = y_Test_Model1(compteurModel1);
+        compteurModel1 = compteurModel1 +1;
+    elseif modelSelectionIdx(i) == 2
+        y_Final(i) = y_Test_Model2(compteurModel2);
+        compteurModel2 = compteurModel2 +1;
+    elseif modelSelectionIdx(i) == 3
+        y_Final(i) = y_Test_Model3(compteurModel3);
+        compteurModel3 = compteurModel3 +1;
+    else
+        disp('ERROR: UNKOWN MODEL');
+    end
+end
+
+assert(compteurModel1 == length(y_Test_Model1) + 1);
+assert(compteurModel2 == length(y_Test_Model2) + 1);
+assert(compteurModel3 == length(y_Test_Model3) + 1);
+
+csvwrite('predictions_regression.csv', y_Final);
 
 % Ending program
 disp('Thanks for using our script');
