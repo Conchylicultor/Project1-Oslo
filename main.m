@@ -28,6 +28,8 @@ load('Oslo_regression.mat');
 % hist(X_train(:,38), 100);
 % figure(5);
 % plot(X_train(:,16), X_train(:,38), '.');
+% figure(5);
+% scatter3(X_train(:,16), X_train(:,38), y_train);
 
 % % Histogram of those collumn (test)
 % figure(3);
@@ -45,6 +47,8 @@ load('Oslo_regression.mat');
 % We save our collumns for the model selection
 xModelSelection = [X_train(:,16) X_train(:,38)];
 xModelSelectionTest = [X_test(:,16) X_test(:,38)];
+%xModelSelection = [X_train(:,16).*X_train(:,16) X_train(:,38).*X_train(:,38)];
+%xModelSelectionTest = [X_test(:,16).*X_test(:,16) X_test(:,38).*X_test(:,38)];
 
 % Do we not normalize collumn 16 and 38 ???
 
@@ -102,12 +106,12 @@ assert(length(S_GlobalSet(:,1)) == length(Y_GlobalSet), 'Error: more or less val
 
 % The limits are:
 % * 0-4100 for cluster 1
-% * 4101-9000 for cluster 2
-% * 9000-+++ for cluster 3
+% * 4101-8800 for cluster 2
+% * 8800-+++ for cluster 3
 
 model1Idx = Y_GlobalSet <= 4100;
-model2Idx = bitand(Y_GlobalSet > 4100,Y_GlobalSet <= 9000);
-model3Idx = Y_GlobalSet > 9000;
+model2Idx = bitand(Y_GlobalSet > 4100,Y_GlobalSet <= 8800);
+model3Idx = Y_GlobalSet > 8800;
 
 % Assure correctness
 assert(length(Y_GlobalSet) == sum(model1Idx+model2Idx+model3Idx), 'Values in no model');
@@ -157,6 +161,12 @@ y_Model3 = Y_GlobalSet(model3Idx);
 % plot(X_Model2(:,16), X_Model2(:,38), '.g');
 % plot(X_Model3(:,16), X_Model3(:,38), '.b');
 
+% figure(11);
+% hold on;
+% scatter3(S_GlobalSet(model1Idx,1), S_GlobalSet(model1Idx,2), y_Model1, '.r');
+% scatter3(S_GlobalSet(model2Idx,1), S_GlobalSet(model2Idx,2), y_Model2, '.g');
+% scatter3(S_GlobalSet(model3Idx,1), S_GlobalSet(model3Idx,2), y_Model3, '.b');
+
 % TODO: Plot ambiguity zones in another color to see eventual correlations
 % to select disriminate criteria
 
@@ -172,6 +182,40 @@ k=12; % Parametter for the cross validation
 [beta1] = trainRegressionModel(X_Model1, y_Model1, k, 1);
 [beta2] = trainRegressionModel(X_Model2, y_Model2, k, 2);
 [beta3] = trainRegressionModel(X_Model3, y_Model3, k, 3);
+
+% Test data reduction
+
+% Initialization
+% if ~exist('cost1')
+%     cost1 = zeros(1, length(X_Model1(1,:)));
+%     cost2 = zeros(1, length(X_Model1(1,:)));
+%     cost3 = zeros(1, length(X_Model1(1,:)));
+% end
+
+% for i = 1:length(X_Model1(1,:))
+%     disp(num2str(i));
+%     
+%     X_Model1Red = X_Model1;
+%     X_Model2Red = X_Model2;
+%     X_Model3Red = X_Model3;
+%     
+%     X_Model1Red(:,i) = [];
+%     X_Model2Red(:,i) = [];
+%     X_Model3Red(:,i) = [];
+%     
+%     [beta1, cost1New(i)] = trainRegressionModel(X_Model1, y_Model1, k, 1);
+%     [beta2, cost2New(i)] = trainRegressionModel(X_Model2, y_Model2, k, 2);
+%     [beta3, cost3New(i)] = trainRegressionModel(X_Model3, y_Model3, k, 3);
+% end
+% figure;
+% hold on;
+% cost1 = cost1 + cost1New;
+% cost2 = cost2 + cost2New;
+% cost3 = cost3 + cost3New;
+% plot(cost1);
+% plot(cost2);
+% plot(cost3);
+
 
 disp('-------------------------------------------------------');
 

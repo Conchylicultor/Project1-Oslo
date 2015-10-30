@@ -37,8 +37,8 @@ for i=1:length(X_Train(1,:)) % For each collumn
                 assert(sum(xCategoricalTest(:,j-minX+1)) ~= 0, 'Warning: null column');
             end
             
-            X_TrainAfter = [X_TrainAfter xCategoricalTrain];
-            X_TestAfter  = [X_TestAfter  xCategoricalTest];
+            % X_TrainAfter = [X_TrainAfter xCategoricalTrain];
+            % X_TestAfter  = [X_TestAfter  xCategoricalTest];
         end
         
         

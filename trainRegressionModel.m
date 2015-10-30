@@ -1,4 +1,4 @@
-function [beta] = trainRegressionModel(X_train, y_train, k_fold, idModel)
+function [beta, cost] = trainRegressionModel(X_train, y_train, k_fold, idModel)
 %trainRegressionModel Find the best parametters beta using cross validation
 
 disp(['Compute regression for model ',num2str(idModel)]);
@@ -76,8 +76,9 @@ betaRidge = ridgeRegression(Y_TrainSet, tX_TrainSet, valsLambda(minCostRidgeIdx)
 % boxplot([costTraining costTesting]);
 
 beta = betaRidge;
+cost = mean(costTesting(:, 3));
 
-disp(['Cost model ', num2str(idModel), ': ', num2str(mean(costTesting(:, 3)))]);
+disp(['Cost model ', num2str(idModel), ': ', num2str(cost)]);
 
 % figure(3);
 % plot(tX_TestSet, tX_TestSet*betaRidge, '.g');
