@@ -57,6 +57,6 @@ disp('OK!');
 
 % code for writing csv files
 tY = 1.0 ./ (1.0 + exp(-tX * tBeta));
-csvwrite('predictions_classification.csv', tY);
+csvwrite('test_predictions_classification.csv', tY);
 
 disp('test finished successfully');
