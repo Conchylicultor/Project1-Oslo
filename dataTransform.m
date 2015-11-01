@@ -37,8 +37,11 @@ for i=1:length(X_Train(1,:)) % For each collumn
                 assert(sum(xCategoricalTest(:,j-minX+1)) ~= 0, 'Warning: null column');
             end
             
-            % X_TrainAfter = [X_TrainAfter xCategoricalTrain];
-            % X_TestAfter  = [X_TestAfter  xCategoricalTest];
+            %X_TrainAfter = [X_TrainAfter xCategoricalTrain];
+            %X_TestAfter  = [X_TestAfter  xCategoricalTest];
+            
+            X_TrainAfter = [X_TrainAfter X_Train(:,i)];
+            X_TestAfter  = [X_TestAfter  X_Test(:,i)];
         end
         
         
@@ -56,9 +59,10 @@ X_TestAfter = X_TestAfter(:, 2:end);
 end
 
 function [Y] = basicMath(X)
-    %Y = X;
+    Y = X;
+    %sqrt(abs(X));
     %Y = X.*X; % Much better
-    Y = X.*X.*X; % Much much better
+    %Y = X.*X.*X; % Much much better
     %Y = X.*X.*X.*X;
     
     %Y = exp(X); % Worst

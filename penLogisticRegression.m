@@ -3,7 +3,7 @@ function [ beta ] = penLogisticRegression( y,tX,alpha,lambda )
 %   Remark: alpha is the step size for gradient descent, lambda is the regularization parameter
 
     % Parameters
-    maxIters = 1000;
+    maxIters = 500;
 
     % Initialization
     beta = zeros(length(tX(1,:)), 1);
@@ -20,6 +20,11 @@ function [ beta ] = penLogisticRegression( y,tX,alpha,lambda )
         % For debugging
         %L = computeCostPLR(y, tX, beta,lambda);
         %fprintf('%.2f  %.2f %.2f\n', L, beta(1), beta(2));
+        
+        if (g'*g < 1e-5) % Convergence (or local minimum)
+            fprintf('Convergence');
+            break; 
+        end;
     end
 end
 
