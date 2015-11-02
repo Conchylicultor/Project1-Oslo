@@ -40,8 +40,8 @@ for i=1:length(X_Train(1,:)) % For each collumn
             %X_TrainAfter = [X_TrainAfter xCategoricalTrain];
             %X_TestAfter  = [X_TestAfter  xCategoricalTest];
             
-            X_TrainAfter = [X_TrainAfter X_Train(:,i)];
-            X_TestAfter  = [X_TestAfter  X_Test(:,i)]; % Adding without transformation
+            %X_TrainAfter = [X_TrainAfter X_Train(:,i)];
+            %X_TestAfter  = [X_TestAfter  X_Test(:,i)]; % Adding without transformation
         end
         
         

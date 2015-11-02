@@ -11,7 +11,7 @@ disp('Project1 - Oslo Team');
 load('Oslo_classification.mat');
 
 global final;
-final = 1;
+final = 0;
 
 %% Some data visualization and model extraction
 
@@ -341,26 +341,28 @@ y_Test_Model2 = sigmoid(tX_Model2_Test*beta2);
 %% Make the final predictions and recording
 % Some verifications about the consistency of the testing set
 
-% Restore the results in the right order
-compteurModel1 = 1;
-compteurModel2 = 1;
-y_Final=zeros(length(modelSelectionIdx_TestAndJustTest),1);
-for i=1:length(modelSelectionIdx_TestAndJustTest)
-    if modelSelectionIdx_TestAndJustTest(i) == 1
-        y_Final(i) = y_Test_Model1(compteurModel1);
-        compteurModel1 = compteurModel1 +1;
-    elseif modelSelectionIdx_TestAndJustTest(i) == 0
-        y_Final(i) = y_Test_Model2(compteurModel2);
-        compteurModel2 = compteurModel2 +1;
-    else
-        disp('ERROR: UNKOWN MODEL');
+if final
+    % Restore the results in the right order
+    compteurModel1 = 1;
+    compteurModel2 = 1;
+    y_Final=zeros(length(modelSelectionIdx_TestAndJustTest),1);
+    for i=1:length(modelSelectionIdx_TestAndJustTest)
+        if modelSelectionIdx_TestAndJustTest(i) == 1
+            y_Final(i) = y_Test_Model1(compteurModel1);
+            compteurModel1 = compteurModel1 +1;
+        elseif modelSelectionIdx_TestAndJustTest(i) == 0
+            y_Final(i) = y_Test_Model2(compteurModel2);
+            compteurModel2 = compteurModel2 +1;
+        else
+            disp('ERROR: UNKOWN MODEL');
+        end
     end
+
+    assert(compteurModel1 == length(y_Test_Model1) + 1);
+    assert(compteurModel2 == length(y_Test_Model2) + 1);
+
+    csvwrite('predictions_classification.csv', y_Final);
 end
-
-assert(compteurModel1 == length(y_Test_Model1) + 1);
-assert(compteurModel2 == length(y_Test_Model2) + 1);
-
-csvwrite('predictions_classification.csv', y_Final);
 
 % Ending program
 disp('Thanks for using our script');
