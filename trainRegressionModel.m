@@ -76,12 +76,14 @@ end
 meanCostRidge = mean(costRidgeTesting);
 [~, minCostRidgeIdx] = min(meanCostRidge); % Select the best value
 
-valsLambda(minCostRidgeIdx) % Best value of lambda
-figure(idModel*1000 + 10);
-semilogx(valsLambda, mean(costRidgeTesting),'-sb');
-hold on
-semilogx(valsLambda, mean(costRidgeTraining),'-sr');
-grid on
+% disp(['Best lambda: ', num2str(valsLambda(minCostRidgeIdx))]);% Best value of lambda
+
+% Display the lambda curve
+% figure(idModel*1000 + 10);
+% semilogx(valsLambda, mean(costRidgeTesting),'-sb');
+% hold on
+% semilogx(valsLambda, mean(costRidgeTraining),'-sr');
+% grid on
 
 costTraining(:,3) = costRidgeTraining(:,minCostRidgeIdx);
 costTesting(:,3) = costRidgeTesting(:,minCostRidgeIdx);

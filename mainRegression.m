@@ -11,7 +11,8 @@ disp('Project1 - Oslo Team');
 load('Oslo_regression.mat');
 
 global final;
-final = 1;
+final = 0;
+
 %% Some data visualization
 % to spot the categorical data for instance
 
@@ -350,22 +351,22 @@ if ~final
 
     % Data visualisation
 
-    % figure(60);
-    % subplot(1,2,1);
-    % hold on;
-    % plot(X_Model1_Test(:,16), y_Model1_Test, '.r');
-    % plot(X_Model2_Test(:,16), y_Model2_Test, '.g');
-    % plot(X_Model3_Test(:,16), y_Model3_Test, '.b');
-    % title('Ground truth');
-    % 
-    % subplot(1,2,2);
-    % hold on;
-    % plot(X_Model1_Test(:,16), abs(y_Model1_Test - tX_Model1_Test*beta1), '.r');
-    % plot(X_Model2_Test(:,16), abs(y_Model2_Test - tX_Model2_Test*beta2), '.g');
-    % plot(X_Model3_Test(:,16), abs(y_Model3_Test - tX_Model3_Test*beta3), '.b');
-    % title('Prediction errors');
-    % xlabel('X');
-    % ylabel('Error (abs(y-tX*beta))');
+    figure(60);
+    subplot(1,2,1);
+    hold on;
+    plot(X_Model1_Test(:,16), y_Model1_Test, '.r');
+    plot(X_Model2_Test(:,16), y_Model2_Test, '.g');
+    plot(X_Model3_Test(:,16), y_Model3_Test, '.b');
+    title('Ground truth');
+    
+    subplot(1,2,2);
+    hold on;
+    plot(X_Model1_Test(:,16), abs(y_Model1_Test - tX_Model1_Test*beta1), '.r');
+    plot(X_Model2_Test(:,16), abs(y_Model2_Test - tX_Model2_Test*beta2), '.g');
+    plot(X_Model3_Test(:,16), abs(y_Model3_Test - tX_Model3_Test*beta3), '.b');
+    title('Prediction errors');
+    xlabel('X');
+    ylabel('Error (abs(y-tX*beta))');
 
     % Compute the global cost
 
@@ -394,146 +395,51 @@ y_Test_Model3 = tX_Model3_Test*beta3;
 % histogram of the predicted values
 figure;
 hist ( [y_Test_Model1 ; y_Test_Model2 ; y_Test_Model3], 100);
-title('Histogram of the predictions')
-xlabel('Predicted Y')
-ylabel('Frequency')
+title('Histogram of the predictions');
+xlabel('Predicted Y');
+ylabel('Frequency');
 
 assert (sum(selectionModelOther) == 0, 'Warning: some variables are in no model');
 
 %% Make the final predictions and recording
 % Some verifications about the consistency of the testing set
 
-% 3D Visualization of our prediction
-figure(500);
-hold on;
-scatter3(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), y_Test_Model1, '.r');
-scatter3(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), y_Test_Model2, '.g');
-scatter3(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), y_Test_Model3, '.b');
+if final
+    % 3D Visualization of our prediction
+    figure(500);
+    hold on;
+    scatter3(S_Evaluation(selectionModel1,1), S_Evaluation(selectionModel1,2), y_Test_Model1, '.r');
+    scatter3(S_Evaluation(selectionModel2,1), S_Evaluation(selectionModel2,2), y_Test_Model2, '.g');
+    scatter3(S_Evaluation(selectionModel3,1), S_Evaluation(selectionModel3,2), y_Test_Model3, '.b');
 
-% Restore the results in the right order
-compteurModel1 = 1;
-compteurModel2 = 1;
-compteurModel3 = 1;
-y_Final=zeros(length(modelSelectionIdx),1);
-for i=1:length(modelSelectionIdx)
-    if modelSelectionIdx(i) == 1
-        y_Final(i) = y_Test_Model1(compteurModel1);
-        compteurModel1 = compteurModel1 +1;
-    elseif modelSelectionIdx(i) == 2
-        y_Final(i) = y_Test_Model2(compteurModel2);
-        compteurModel2 = compteurModel2 +1;
-    elseif modelSelectionIdx(i) == 3
-        y_Final(i) = y_Test_Model3(compteurModel3);
-        compteurModel3 = compteurModel3 +1;
-    else
-        disp('ERROR: UNKOWN MODEL');
+    % Restore the results in the right order
+    compteurModel1 = 1;
+    compteurModel2 = 1;
+    compteurModel3 = 1;
+    y_Final=zeros(length(modelSelectionIdx),1);
+    for i=1:length(modelSelectionIdx)
+        if modelSelectionIdx(i) == 1
+            y_Final(i) = y_Test_Model1(compteurModel1);
+            compteurModel1 = compteurModel1 +1;
+        elseif modelSelectionIdx(i) == 2
+            y_Final(i) = y_Test_Model2(compteurModel2);
+            compteurModel2 = compteurModel2 +1;
+        elseif modelSelectionIdx(i) == 3
+            y_Final(i) = y_Test_Model3(compteurModel3);
+            compteurModel3 = compteurModel3 +1;
+        else
+            disp('ERROR: UNKOWN MODEL');
+        end
     end
+
+    assert(compteurModel1 == length(y_Test_Model1) + 1);
+    assert(compteurModel2 == length(y_Test_Model2) + 1);
+    assert(compteurModel3 == length(y_Test_Model3) + 1);
+
+    csvwrite('predictions_regression.csv', y_Final);
 end
-
-assert(compteurModel1 == length(y_Test_Model1) + 1);
-assert(compteurModel2 == length(y_Test_Model2) + 1);
-assert(compteurModel3 == length(y_Test_Model3) + 1);
-
-csvwrite('predictions_regression.csv', y_Final);
 
 % Ending program
 disp('Thanks for using our script');
 
 return;
-
-
-
-
-
-
-
-
-
-
-
-
-%%
-%% GARBAGE CODE: TO DELETE
-%%
-%%
-
-% X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
-% y_trainModel1 = y_train(X_train(:,16) > 15.0);
-
-% Collumn 63(cat 4), 28(cat 4)!!! and 10(cat 3) could help discriminate
-
-% Warning: apply the same normalization that for the training data
-
-% % Trying extract only on of th gaussian
-% X_trainModel1 = X_train(X_train(:,16) > 15.0, :);
-% y_trainModel1 = y_train(X_train(:,16) > 15.0);
-% X_train = X_trainModel1(:,26);
-% y_train = y_trainModel1;
-% X_trainModel1 = X_train(y_trainModel1 > 8000);
-% y_trainModel1 = y_train(y_trainModel1 > 8000);
-% X_train = X_trainModel1;
-% y_train = y_trainModel1;
-% 
-% figure(512);
-% plot(X_train, y_train, '.');
-
-%X_trainModel2 = X_train(X_train(:,16) < 15.0, :);
-%plot(X_trainModel1(:,16), y_train(X_train(:,16) > 15.0), '.r');
-%plot(X_trainModel2(:,16), y_train(X_train(:,16) < 15.0), '.b');
-
-
-
-% Highly correlated input
-%plot(X_train(:,38), y_train, '.r');
-%plot(X_train(:,16), y_train, '.r');
-%plot(X_train(:,61), y_train, '.b');
-%plot(X_train(:,12), y_train, '.b');
-%plot(X_train(:,26), y_train, '.b');
-%plot(X_train(:,19), y_train, '.y');
-%plot(X_train(:,11), y_train, '.y');
-%plot(X_train(:,37), y_train, '.y');
-
-X_train = [X_train(:,38) ...
-           X_train(:,16) ...
-           X_train(:,61) ...
-           X_train(:,12) ...
-           X_train(:,26) ...
-           X_train(:,19) ...
-           X_train(:,11) ...
-           X_train(:,37)];
-
-
-%% Visualize Data
-% % Visualize Y=f(X), allow us to see some correlation
-% NbColor = 5;
-% colorMap = hsv(NbColor);
-% for i= 1:length(X_train(1,:))
-%     figure(floor((i-1)/NbColor) + 1);
-%     hold on;
-%     plot(X_train(:,i), y_train, '.', 'Color',colorMap(mod(i-1, NbColor) + 1,:));
-% end
-% 
-% % We see here three clusters of points
-% %hist(y_train, 200);
-
-%% Bias vs Variance diagnostic: Testing and training error = f(size of dataset)
-
-datasetSize = 2:30;
-averCostTraining = zeros(length(datasetSize),1);
-averCostTesting = zeros(length(datasetSize),1);
-for k=datasetSize
-    [costTraining, costTesting] = mlRegression(X_train, y_train, X_test, k);
-    
-    idx = 3; % We take the results of leastSquare, gradientDescent or ridgeRegression
-    averCostTraining(k-1) = mean(costTraining(:,idx));
-    averCostTesting(k-1) = mean(costTesting(:,idx));
-end
-
-figure (100);
-hold on;
-datasetSize = length(y_train) - length(y_train)./datasetSize; % Size of the training set
-plot(datasetSize, averCostTraining);
-plot(datasetSize, averCostTesting);
-title('Learning curve');
-xlabel('Training set size');
-ylabel('RMSE');
