@@ -11,7 +11,7 @@ disp('Project1 - Oslo Team');
 load('Oslo_classification.mat');
 
 global final;
-final = 0;
+final = 1;
 
 %% Some data visualization and model extraction
 
@@ -41,6 +41,7 @@ tabulate(y_train); % Proportions (class 1: 75%, class 2: 25%)
 % end
 
 modelSelectionIdx_TestAndTrain = X_train(:,12) >= -0.6;
+modelSelectionIdx_TestAndJustTest = X_test(:,12) >= -0.6;
 
 % for i=1:length(X_train(1,:))
 %     figure(i*100);
@@ -102,16 +103,23 @@ end
 if final
     X_Evaluation = X_test; % Testing data
     
-    % TODO: 
-    % model1_Idx_Evaluation =
-    % model2_Idx_Evaluation =
+    model1_Idx_Evaluation = modelSelectionIdx_TestAndJustTest;
+    model2_Idx_Evaluation = ~modelSelectionIdx_TestAndJustTest;
+    
+    model1_Idx_GlobalSet = modelSelectionIdx_TestAndTrain;
+    model2_Idx_GlobalSet = ~modelSelectionIdx_TestAndTrain; % Taking all training
     
     X_GlobalSet  = X_train;
-    Y_GlobalSet  = y_train; % Training data for the three models
-
-    % For choosing the right model
-    S_Evaluation = xModelSelectionTest;
-    S_GlobalSet  = xModelSelectionTrain;
+    Y_GlobalSet  = y_train; % Training data for the two models
+    
+%     evaluationIdx = (crossvalind('Kfold', length(y_train), 10) == 1); % Select the final testing set
+% 
+%     ModelIdx_GlobalSet = modelSelectionIdx_TestAndTrain(~evaluationIdx); % Which model apply
+%     model1_Idx_GlobalSet = ModelIdx_GlobalSet;
+%     model2_Idx_GlobalSet = ~ModelIdx_GlobalSet;
+% 
+%     X_GlobalSet  = X_train(~evaluationIdx,:);
+%     Y_GlobalSet  = y_train(~evaluationIdx,:);
 else
     % Separate 90%-10%
     evaluationIdx = (crossvalind('Kfold', length(y_train), 10) == 1); % Select the final testing set
@@ -327,7 +335,8 @@ y_Test_Model2(y_Test_Model2 == 0) = -1;
 % histogram of the predicted values
 tabulate ( [y_Test_Model1 ; y_Test_Model2]);
 
-return;
+y_Test_Model1 = sigmoid(tX_Model1_Test*beta1);
+y_Test_Model2 = sigmoid(tX_Model2_Test*beta2);
 
 %% Make the final predictions and recording
 % Some verifications about the consistency of the testing set
@@ -335,12 +344,12 @@ return;
 % Restore the results in the right order
 compteurModel1 = 1;
 compteurModel2 = 1;
-y_Final=zeros(length(modelSelectionIdx),1);
-for i=1:length(modelSelectionIdx)
-    if modelSelectionIdx(i) == 1
+y_Final=zeros(length(modelSelectionIdx_TestAndJustTest),1);
+for i=1:length(modelSelectionIdx_TestAndJustTest)
+    if modelSelectionIdx_TestAndJustTest(i) == 1
         y_Final(i) = y_Test_Model1(compteurModel1);
         compteurModel1 = compteurModel1 +1;
-    elseif modelSelectionIdx(i) == 2
+    elseif modelSelectionIdx_TestAndJustTest(i) == 0
         y_Final(i) = y_Test_Model2(compteurModel2);
         compteurModel2 = compteurModel2 +1;
     else

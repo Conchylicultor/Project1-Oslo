@@ -14,16 +14,21 @@ y_train = y_train(idx);
 tX_train = [ones(length(y_train), 1) X_train];
 
 alpha = 0.005;
+if idModel == 1
+    lambda = 1.92;
+elseif idModel == 2
+    lambda = 2.45;
+end
 
 global final;
 if(final)    
-    beta = penLogisticRegression(y_train, tX_train, lambda);
+    beta = penLogisticRegression(y_train, tX_train,alpha, lambda);
     
     cost = 0;
     
-    disp(['Train cost rmse: ',    num2str(costRMSE(y_train, tX_train, beta)),' computed with fixed lambda']);
+    %disp(['Train cost rmse: ',    num2str(costRMSE(y_train, tX_train, beta)),' computed with fixed lambda']);
     disp(['Train cost class: ',   num2str(costClass(y_train, tX_train, beta)),' computed with fixed lambda']);
-    disp(['Train cost logClass: ',num2str(costLogClass(y_train, tX_train, beta)),' computed with fixed lambda']);
+    %disp(['Train cost logClass: ',num2str(costLogClass(y_train, tX_train, beta)),' computed with fixed lambda']);
     
     return;
 end
