@@ -3,7 +3,7 @@ function [ beta ] = penLogisticRegression( y,tX,alpha,lambda )
 %   Remark: alpha is the step size for gradient descent, lambda is the regularization parameter
 
     % Parameters
-    maxIters = 500;
+    maxIters = 1000;
 
     % Initialization
     beta = zeros(length(tX(1,:)), 1);
