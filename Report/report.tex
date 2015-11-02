@@ -85,7 +85,7 @@ At first, we have try to train all our data with a single model. It was not goin
 
 To avoid bias, we have separated our training set in two parts (90\%-10\%): the first one to train (and test using cross validation) the three (regression) / two (classification) models, and the other one to test the model selection and estimate the global error.
 
-Our input matrix being ill-conditioned, we have decided to focus on using ridge regression which will lift the eigenvalue to avoid the problem. And selecting the best value of lambda for each of our model.
+Our input matrix being ill-conditioned, we have decided to focus on using ridge regression which will lift the eigenvalue to avoid the problem. And selecting the best value of lambda for each of our model (with cross validation, we found $\lambda_{model1} = 0.0335$, $\lambda_{model1} = 0.1016$ and $\lambda_{model1} = 0.0335;$).
 
 We have separated the first part of our training values (the 90\%) into three groups corresponding to the output clusters. We have then trained and tested each model independently.
 
@@ -108,11 +108,11 @@ Each cluster size being large from about 4000, having a rmse of about 15-30, is 
 
 \section{Classification models}
 
-Similarly, for the classification task,  we have separated our training data into two parts corresponding to the two Gaussians distribution. We have done that by using the column 12 where the Gaussian distributions were already separated, and we have then checked that the data where also separated for the other columns.
+Similarly, for the classification task, we have separated our training data into two parts corresponding to the two Gaussian distributions. We have done that by using the column 12 where the Gaussian distributions were already separated, and we have then checked that the data where also separated for the other columns.
 
 For our classification models, after having try without success to solve our ill-conditioning input matrix by reducing the dimension we conclude we had to use the penalized logistic regression. In order to have the better results possible, we needed a small alpha with a great number of iteration, which made the convergence really slow (in addition we also needed to compute the best lambda using cross-validation, which made the program even slower).
 
-To improve the convergence speed, as well as the global performances, we also have try to apply Iterative Recursive Least-Squares, but the ill-conditioning made our beta diverge to infinity. After few try, we have stopped using this method and went back to penalized logistic regression.
+To improve the convergence speed, as well as the global performances, we also have try to apply Iterative Recursive Least-Squares, but the ill-conditioning made our beta diverge to infinity. After few try, we have stopped using this method and went back to penalized logistic regression. We have used cross validation to compute the optimal parameters for lambda, it gives us: $\lambda=1.92$ for model 1 and $\lambda = 2.45$ for our model 2.
 
 The results predicted with our model were not good (30-45\% of mistake on the global error). A lack of times prevent us to do some diagnostic to identify were was the problem with our results. Our model had a bias toward the -1 class. Even if this class was minority into our training set, our model predict more -1 than +1.
 
